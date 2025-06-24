@@ -1,0 +1,14 @@
+name: haijimi
+person:
+  name: ${name}
+  age: 20
+
+person2: { name: xuqingfeng, age: 20 }
+
+address:
+  - beijing
+  - shanghai
+
+address2: [Beijing, Shanghai]
+
+msg: "hello \n world"
