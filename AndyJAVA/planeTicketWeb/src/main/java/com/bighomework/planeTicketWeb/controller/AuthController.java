@@ -24,7 +24,7 @@ import com.bighomework.planeTicketWeb.service.AuthService;
 import com.bighomework.planeTicketWeb.util.ApiResponse;
 
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor; // 引入 Map
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -42,30 +42,29 @@ public class AuthController {
                 new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
+
         String username = ((User) authentication.getPrincipal()).getUsername();
         Customer customer = customerRepository.findByPhone(username)
                 .orElseThrow(() -> new BusinessException("登录成功但无法在数据库中找到对应的用户信息"));
+
         String jwt = jwtTokenProvider.generateToken(authentication);
         
-        // 确保 LoginResponse DTO 中有 name 和 membershipLevel 字段
-        LoginResponse loginResponse = new LoginResponse(
-            jwt, 
-            customer.getPhone(),
-            customer.getName(),
-            customer.getMembershipLevel()
-        );
+      
+        LoginResponse loginResponse = LoginResponse.builder()
+                .token(jwt)
+                .username(customer.getName())
+                .id(customer.getCustomerId())
+                .name(customer.getName())
+                .membershipLevel(customer.getMembershipLevel())
+                .build();
         
         return ResponseEntity.ok(ApiResponse.success(loginResponse, "登录成功"));
     }
 
-    /**
-     * 【核心修改】
-     * 注册成功后，返回一个包含成功状态的非空 data 对象。
-     */
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<Object>> register(@Valid @RequestBody RegisterRequest registerRequest) {
         authService.registerUser(registerRequest);
-        // 返回一个包含 "success": true 的 Map，而不是 null
+        
         return ResponseEntity.ok(ApiResponse.success(Map.of("success", true), "注册成功"));
     }
 }

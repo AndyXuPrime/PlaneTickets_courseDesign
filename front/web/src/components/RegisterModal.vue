@@ -1,144 +1,142 @@
 <template>
-  <div class="modal" @click.self="$emit('close')">
-    <div class="modal-content-styled">
-      <!-- 1. 标题和关闭按钮 -->
-      <div class="heading">新用户注册</div>
-      <button class="close-button" @click="$emit('close')" title="关闭">×</button>
+  <el-dialog
+    title="新用户注册"
+    :visible.sync="showModal"
+    width="400px"
+    @close="close"
+    :close-on-click-modal="false"
+  >
+    <el-form :model="form" :rules="rules" ref="registerForm" label-position="top">
       
-      <!-- 2. 注册表单 -->
-      <form @submit.prevent="handleRegister" class="form">
-        <!-- 输入框网格布局 -->
-        <div class="form-grid">
-          <!-- 姓名 -->
-          <div class="input-field">
-            <input type="text" id="reg-name" v-model.trim="form.name" required />
-            <label for="reg-name">姓名</label>
-          </div>
-          <!-- 手机号 -->
-          <div class="input-field">
-            <input type="tel" id="reg-phone" v-model.trim="form.phone" required pattern="^1[3-9]\d{9}$" />
-            <label for="reg-phone">手机号</label>
-          </div>
-          <!-- 密码 -->
-          <div class="input-field">
-            <input :type="passwordFieldType" id="reg-password" v-model="form.password" required minlength="6" />
-            <label for="reg-password">密码 (至少6位)</label>
-            <i :class="['passicon', isPasswordVisible ? 'fas fa-eye-slash' : 'fas fa-eye']" @click="togglePasswordVisibility"></i>
-          </div>
-          <!-- 身份证号 -->
-          <div class="input-field">
-            <input type="text" id="reg-idcard" v-model.trim="form.idCard" required pattern="\d{17}[\dX]" />
-            <label for="reg-idcard">身份证号</label>
-          </div>
-        </div>
+      <!-- 【核心修改 1】在这里添加错误提示区域 -->
+      <el-alert
+        v-if="errorMessage"
+        :title="errorMessage"
+        type="error"
+        show-icon
+        class="error-alert"
+        @close="errorMessage = ''"
+      ></el-alert>
 
-        <!-- 邮箱 (可选，单独一行) -->
-        <div class="input-field">
-          <!-- 将 type 设置为 "email" 可以利用浏览器内置的格式校验 -->
-          <input type="email" id="reg-email" v-model.trim="form.email" />
-          <label for="reg-email">邮箱 (可选)</label>
-        </div>
-
-        <!-- 会员等级选择 -->
-        <div class="membership-selection">
-          <label class="group-label">选择会员等级</label>
-          <div class="options-container">
-            <div 
-              v-for="level in membershipLevels" 
-              :key="level.value"
-              class="option-card"
-              :class="{ selected: form.membershipLevel === level.value }"
-              @click="form.membershipLevel = level.value"
-            >
-              <div class="level-name">{{ level.name }}</div>
-              <div class="level-desc">{{ level.desc }}</div>
-              <div v-if="form.membershipLevel === level.value" class="selected-badge">
-                <i class="fas fa-check"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- 主操作按钮 -->
-        <div class="btn-container">
-          <button type="submit" class="btn-submit" :disabled="isLoading">
-            <span>{{ isLoading ? '注册中...' : '同意协议并注册' }}</span>
-          </button>
-        </div>
-      </form>
-
-      <!-- 切换到登录 -->
-      <div class="switch-text text-center">
-        <p>已有账号？ <a @click="$emit('switch-to-login')">立即登录</a></p>
+      <el-form-item label="姓名" prop="name">
+        <el-input v-model="form.name" placeholder="请输入您的真实姓名"></el-input>
+      </el-form-item>
+      <el-form-item label="手机号" prop="phone">
+        <el-input v-model="form.phone" placeholder="请输入您的手机号"></el-input>
+      </el-form-item>
+      <el-form-item label="密码 (至少6位)" prop="password">
+        <el-input v-model="form.password" type="password" placeholder="请输入密码"></el-input>
+      </el-form-item>
+      <el-form-item label="身份证号" prop="idCard">
+        <el-input v-model="form.idCard" placeholder="请输入18位身份证号"></el-input>
+      </el-form-item>
+      <el-form-item label="邮箱 (可选)" prop="email">
+        <el-input v-model="form.email" placeholder="请输入您的电子邮箱"></el-input>
+      </el-form-item>
+      <el-form-item label="选择会员等级" prop="membershipLevel">
+        <el-select v-model="form.membershipLevel" placeholder="请选择" style="width: 100%;">
+          <el-option label="普通会员" value="普通"></el-option>
+          <el-option label="银卡会员" value="银卡"></el-option>
+          <el-option label="金卡会员" value="金卡"></el-option>
+          <el-option label="白金会员" value="白金"></el-option>
+        </el-select>
+      </el-form-item>
+    </el-form>
+    <span slot="footer" class="dialog-footer">
+      <el-button 
+        type="primary" 
+        @click="handleRegister" 
+        :loading="isLoading" 
+        style="width: 100%;"
+      >
+        {{ isLoading ? '注册中...' : '同意协议并注册' }}
+      </el-button>
+      <div class="switch-login">
+        已有账号？ <el-link type="primary" @click="switchToLogin">立即登录</el-link>
       </div>
-    </div>
-  </div>
+    </span>
+  </el-dialog>
 </template>
 
 <script>
-import api from '../api';
+import api from '@/api';
+import { store, mutations } from '@/store';
 
 export default {
   name: 'RegisterModal',
   data() {
     return {
-      isLoading: false,
-      isPasswordVisible: false,
       form: {
         name: '',
-        password: '',
         phone: '',
-        email: '', // email 初始值为空字符串
+        password: '',
         idCard: '',
-        membershipLevel: '普通', 
+        email: '',
+        membershipLevel: '普通', // 默认值
       },
-      membershipLevels: [
-        { name: '普通会员', value: '普通', desc: '基础预订服务' },
-        { name: '银卡会员', value: '银卡', desc: '享95折票价' },
-        { name: '金卡会员', value: '金卡', desc: '享9折优惠' },
-        { name: '白金会员', value: '白金', desc: '享85折优惠' }
-      ]
+      rules: {
+        // 表单验证规则
+        name: [{ required: true, message: '姓名不能为空', trigger: 'blur' }],
+        phone: [
+          { required: true, message: '手机号不能为空', trigger: 'blur' },
+          { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' }
+        ],
+        password: [
+          { required: true, message: '密码不能为空', trigger: 'blur' },
+          { min: 6, message: '密码长度至少为6位', trigger: 'blur' }
+        ],
+        idCard: [
+          { required: true, message: '身份证号不能为空', trigger: 'blur' },
+          { len: 18, message: '身份证号必须为18位', trigger: 'blur' }
+        ],
+        membershipLevel: [{ required: true, message: '请选择会员等级', trigger: 'change' }],
+      },
+      isLoading: false,
+      // 【核心修改 2】增加一个用于存储错误信息的变量
+      errorMessage: '', 
     };
   },
   computed: {
-    passwordFieldType() {
-      return this.isPasswordVisible ? 'text' : 'password';
+    showModal: {
+      get() {
+        return store.showRegisterModal;
+      },
+      set(value) {
+        mutations.setShowRegisterModal(value);
+      }
     }
   },
   methods: {
-    async handleRegister() {
-      this.isLoading = true;
-      try {
-        // 【核心修复】在发送前，对可选的 email 字段进行处理
-        // 创建一个载荷副本，避免直接修改 this.form
-        const payload = { ...this.form };
-
-        // 如果 email 字段为空字符串，就从载荷中删除它或设为 null
-        // 这样可以确保不会将空的 email 字符串发送给后端，从而避免违反数据库约束
-        if (!payload.email) {
-          delete payload.email; // 或者 payload.email = null;
-        }
-        
-        const response = await api.register(payload); // 发送处理过的 payload
-        
-        if (response && response.code === 200) { 
-          this.$message.success('注册成功！请登录。');
-          this.$emit('switch-to-login');
-        } else {
-          console.warn('注册API的响应格式不符合预期:', response);
-          if (!response) {
-             this.$message.error('注册请求失败，请稍后重试。');
+    handleRegister() {
+      this.$refs.registerForm.validate(async (valid) => {
+        if (valid) {
+          this.isLoading = true;
+          this.errorMessage = ''; // 开始注册前，清空旧的错误信息
+          try {
+            await api.register(this.form);
+            this.$message.success('注册成功！现在您可以登录了。');
+            this.switchToLogin(); // 注册成功后，自动切换到登录弹窗
+          } catch (error) {
+            // 【核心修改 3】捕获错误，并从后端返回的响应中提取 message
+            if (error.response && error.response.data && error.response.data.message) {
+              this.errorMessage = error.response.data.message;
+            } else {
+              this.errorMessage = '发生未知错误，请稍后重试。';
+            }
+            console.error('注册时出错:', error);
+          } finally {
+            this.isLoading = false;
           }
         }
-      } catch (error) {
-        console.error('注册时出错:', error);
-        // 错误消息已由API拦截器处理
-      } finally {
-        this.isLoading = false;
-      }
+      });
     },
-    togglePasswordVisibility() {
-      this.isPasswordVisible = !this.isPasswordVisible;
+    switchToLogin() {
+      mutations.setShowLoginModal(true);
+    },
+    close() {
+      this.$refs.registerForm.resetFields();
+      this.errorMessage = ''; // 关闭弹窗时也清空错误信息
+      mutations.setShowRegisterModal(false);
     }
   }
 };
@@ -179,4 +177,11 @@ export default {
 .switch-text{margin-top:20px;color:var(--gray);font-size:14px}
 .switch-text a{color:var(--primary);cursor:pointer;text-decoration:none;font-weight:500}
 .text-center{text-align:center}
+.switch-login {
+  text-align: center;
+  margin-top: 15px;
+}
+.error-alert {
+  margin-bottom: 20px;
+}
 </style>

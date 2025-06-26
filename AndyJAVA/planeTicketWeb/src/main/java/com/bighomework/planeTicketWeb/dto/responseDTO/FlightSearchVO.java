@@ -1,11 +1,11 @@
 package com.bighomework.planeTicketWeb.dto.responseDTO;
 
+import java.math.BigDecimal;
+import java.time.LocalTime;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
-import java.time.LocalTime;
 
 @Data
 @NoArgsConstructor
@@ -22,10 +22,6 @@ public class FlightSearchVO {
     private BigDecimal price;
     private Integer remainingSeats;
     
-    /**
-     * 新增字段：用于告知前端当前展示的价格是属于哪个舱位的。
-     * 例如："经济舱", "商务舱", "无票"
-     */
-    private String cabinClassForDisplay; 
+    private String cabinClassForDisplay;
 
 }

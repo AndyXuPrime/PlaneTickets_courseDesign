@@ -6,12 +6,7 @@ import java.time.LocalDate;
 import com.bighomework.planeTicketWeb.entity.Flight;
 import com.bighomework.planeTicketWeb.enums.CabinClass;
 
-/**
- * 定价策略接口。
- * <p>
- * 定义了计算机票价格的统一方法，允许系统灵活地切换不同的定价算法。
- * 任何定价策略的实现类都必须实现这个接口。
- */
+
 public interface PricingStrategy {
 
     /**

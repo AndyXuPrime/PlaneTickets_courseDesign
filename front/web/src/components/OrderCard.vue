@@ -116,9 +116,9 @@ export default {
 </script>
 
 <style scoped>
-.order-card { border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; transition: box-shadow 0.3s; }
+.order-card { border: 1px solid #779edd; border-radius: 8px; overflow: hidden; transition: box-shadow 0.3s; }
 .order-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-.order-card-header { display: flex; justify-content: space-between; align-items: center; background-color: #f5f7fa; padding: 10px 15px; font-size: 14px; }
+.order-card-header { display: flex; justify-content: space-between; align-items: center; background-color: #688abe; padding: 10px 15px; font-size: 14px; }
 .order-number { font-weight: 500; }
 .create-time { color: var(--gray); }
 .order-card-body { padding: 15px; }

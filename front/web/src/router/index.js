@@ -39,7 +39,7 @@ const routes = [
   {
     path: '/orders',
     name: 'MyOrders',
-    component: () => import(/* webpackChunkName: "my-orders" */ '../views/MyOrdersView.vue'),
+    component: () => import(/* webpackChunkName: "my-orders" */ '../views/MyTicketsView.vue'),
     meta: {
       title: '我的订单',
       requiresAuth: true

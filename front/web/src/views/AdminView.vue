@@ -139,10 +139,10 @@ export default {
 
     // --- 统计报表 ---
     async fetchRouteSales() {
-        // ...
+        
     },
     async fetchGenericReport() {
-        // ...
+        
     }
   }
 };

@@ -56,14 +56,12 @@ public class AdminStatServiceImpl implements AdminStatService {
 
             default -> throw new BusinessException("不支持的分析维度: " + dimension + "。支持的维度: 'gender', 'age'");
         }
-        // 可以扩展更多维度，如 'membership'
-        // case "membership": ...
+        
         return result;
     }
 
     @Override
     public Map<String, Object> analyzeRoutes() {
-        // 获取最热门的10条航线
         PageRequest topTen = PageRequest.of(0, 10);
         List<RouteAnalysisDTO> topRoutes = ticketRepository.findTopHotRoutes(topTen);
 
@@ -71,9 +69,7 @@ public class AdminStatServiceImpl implements AdminStatService {
         result.put("title", "Top 10 热门航线");
         result.put("data", topRoutes);
 
-        // 可以在这里添加更多航线相关的分析，比如最受欢迎的航空公司等
-        // List<Map<String, Object>> topAirlines = ...
-
+        
         return result;
     }
 
@@ -88,7 +84,7 @@ public class AdminStatServiceImpl implements AdminStatService {
         result.put("title", "航线销售额分析 (" + startDate + " to " + endDate + ")");
         result.put("data", salesData);
         
-        // 简单的打折策略建议
+        
         String suggestion = salesData.isEmpty() ? "无销售数据，无法生成策略。" : 
             "建议对销售额较低或票量较少的航线（如：" + salesData.get(salesData.size()-1).getDepartureAirport() + " -> " + salesData.get(salesData.size()-1).getArrivalAirport() + "）推出限时折扣活动。";
         result.put("suggestion", suggestion);
@@ -101,7 +97,7 @@ public class AdminStatServiceImpl implements AdminStatService {
         return switch (dimension.toLowerCase()) {
             case "airline" -> ticketRepository.findStatsByAirline();
             case "aircraftmodel" -> ticketRepository.findStatsByAircraftModel();
-            // "route" 维度可以使用已有的 findTopHotRoutes
+            
             case "route" -> ticketRepository.findTopHotRoutes(PageRequest.of(0, 20)).stream()
                                 .map(r -> new GenericStatDTO(r.getDepartureAirport() + "-" + r.getArrivalAirport(), r.getTicketCount()))
                                 .collect(Collectors.toList());

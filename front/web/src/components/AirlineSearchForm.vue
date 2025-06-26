@@ -98,7 +98,7 @@ export default {
   display: block;
   margin-bottom: 8px;
   font-weight: 500;
-  color: #fff; /* 假设在深色背景下，标签为白色 */
+  color: #cdcfee; /* 假设在深色背景下，标签为白色 */
 }
 
 /* 适配 Element UI 的选择框和日期选择器 */

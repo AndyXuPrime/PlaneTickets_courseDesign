@@ -31,32 +31,30 @@ public class Ticket {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long ticketId;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id")
-    private Order order;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "flight_number", referencedColumnName = "flight_number")
+    @JoinColumn(name = "flight_number") // 关联到 flights 表
     private Flight flight;
 
     @Column(name = "flight_date")
     private LocalDate flightDate;
 
+    /**
+     * 【核心】这个 customer_id 现在既代表乘机人，也代表预订人。
+     * 我们将字段名改为 passenger 以在代码层面清晰化其主要职责。
+     * 数据库中的列名依然由 @JoinColumn(name = "customer_id") 控制，保持不变。
+     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id")
-    private Customer customer;
+    private Customer passenger;
 
     @Enumerated(EnumType.STRING)
-    // FIX: 使用反引号包裹保留关键字 `class`
     @Column(name = "`class`") 
     private CabinClass cabinClass;
 
     @Column(name = "price", precision = 10, scale = 2)
     private BigDecimal price;
     
-    @Column(name = "final_price", precision = 10, scale = 2)
-    private BigDecimal finalPrice;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
@@ -65,6 +63,7 @@ public class Ticket {
     @Column(name = "booking_time")
     private LocalDateTime bookingTime;
 
+    // payment_time 字段在您的表结构中存在，添加映射
     @Column(name = "payment_time")
     private LocalDateTime paymentTime;
     

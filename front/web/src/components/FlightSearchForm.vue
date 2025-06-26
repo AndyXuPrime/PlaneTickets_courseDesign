@@ -53,12 +53,12 @@ export default {
   },
   methods: {
     submitSearch() {
-      // 基础校验
+    
       if (!this.form.departureAirport || !this.form.arrivalAirport || !this.form.flightDate) {
         this.$message.warning('请填写完整的出发地、目的地和日期！');
         return;
       }
-      // 触发 search 事件，将表单数据传递给父组件 HomeView
+      
       this.$emit('search', { ...this.form });
     },
   },

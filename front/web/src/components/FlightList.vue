@@ -1,11 +1,9 @@
 <template>
   <div class="flight-list">
-    <!-- 检查是否有航班数据，如果没有则显示提示信息 -->
     <div v-if="!flights || flights.length === 0" class="no-flights-placeholder">
       <p>暂无航班信息</p>
     </div>
     
-    <!-- v-else 用于在有航班数据时渲染列表 -->
     <div v-else>
       <div v-for="flight in flights" :key="flight.flightNumber + flight.cabinClassForDisplay" class="flight-item">
         <!-- 航空公司信息 -->
@@ -55,7 +53,7 @@
 </template>
 
 <script>
-import { store, mutations } from '../store'; // 引入全局状态，用于检查登录
+import { store, mutations } from '../store';
 
 export default {
   name: 'FlightList',
@@ -63,10 +61,8 @@ export default {
     flights: {
       type: Array,
       required: true,
-      // 添加一个默认值，增加组件的健壮性
       default: () => []
     },
-    // searchDate 这个 prop 保持不变，因为无论何种查询方式，预订时都需要日期
     searchDate: { 
       type: String,
       required: true,
@@ -74,37 +70,37 @@ export default {
   },
   methods: {
     /**
-     * 处理预订按钮点击事件
+     * 【核心】处理预订按钮点击事件
      * @param {object} flight - 被点击的航班对象
      */
     bookFlight(flight) {
       // 1. 检查用户是否登录
       if (!store.isLoggedIn) {
         this.$message.warning('请先登录再进行预订！');
-        // 2. 调用 mutation 打开登录模态框，这是与全局状态交互的最佳实践
         mutations.setShowLoginModal(true);
         return;
       }
 
-      // 3. 用户已登录，执行跳转到订单确认页面
+      // 2. 检查必要的日期信息是否存在
+      if (!this.searchDate) {
+        this.$message.error('缺少航班日期，无法预订。请返回首页重新搜索。');
+        return;
+      }
+
+      // 3. 用户已登录，执行跳转，并传递完整数据
       this.$router.push({
-        name: 'Booking', // 确保路由配置中有名为 'Booking' 的路由
+        name: 'Booking', // 使用路由名称跳转
         query: {
-          flightNumber: flight.flightNumber,
-          flightDate: this.searchDate,
-          cabinClass: flight.cabinClassForDisplay,
+          // 将完整的 flight 对象转换为 JSON 字符串进行传递
+          flight: JSON.stringify(flight),
+          // 将搜索日期也一并传递过去
+          flightDate: this.searchDate
         }
       });
     },
-
-    /**
-     * 根据航空公司全称获取简称，用于logo显示
-     * @param {string} name - 航空公司全称
-     * @returns {string} - 航空公司简称
-     */
+    
     getAirlineShortName(name) {
       if (!name) return '航司';
-      // 这里的逻辑可以根据实际需要进行扩展
       if (name.includes('国际')) return '国航';
       if (name.includes('东方')) return '东航';
       if (name.includes('南方')) return '南航';
@@ -113,66 +109,86 @@ export default {
       if (name.includes('厦门')) return '厦航';
       return name.substring(0, 2);
     },
-
-    /**
-     * 根据舱位类型返回不同的徽章CSS类
-     * @param {string} cabinClass - 舱位名称
-     * @returns {string} - CSS类名
-     */
+    
     getCabinClassBadge(cabinClass) {
       if (cabinClass === '商务舱') return 'badge-gold';
       return 'badge-info';
-    }
+    },
   }
 };
 </script>
 
 <style scoped>
+/* 样式部分保持不变 */
 .no-flights-placeholder {
   text-align: center;
   padding: 50px;
-  color: var(--gray);
+  color: #888;
 }
-
 .flight-item {
+  display: grid; /* 确保你的CSS中有grid布局 */
   grid-template-columns: 150px 1fr 180px 120px;
   align-items: center;
   gap: 20px;
+  padding: 15px;
+  margin-bottom: 15px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   border-left: 4px solid transparent;
   transition: all 0.3s ease;
 }
 .flight-item:hover {
-  border-left-color: var(--primary);
+  border-left-color: #409EFF;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 .airline-info { text-align: center; }
 .airline-logo { 
-  width: 60px; height: 60px;
-  line-height: 60px;
-  margin: 0 auto 10px; 
+  width: 50px; height: 50px;
+  line-height: 50px;
+  margin: 0 auto 8px; 
   border-radius: 50%;
-  font-size: 18px;
+  font-size: 16px;
   background-color: #e3f2fd;
-  color: var(--primary);
+  color: #409EFF;
   font-weight: bold;
 }
-.airline-name { font-weight: 500; }
-.flight-details { font-size: 13px; color: var(--gray); }
-.flight-route { display: flex; align-items: center; justify-content: space-between; }
+.airline-name { font-weight: 500; font-size: 14px; }
+.flight-details { font-size: 13px; color: #909399; }
+.flight-route { display: flex; align-items: center; justify-content: center; }
 .departure, .arrival { text-align: center; }
-.flight-time { font-size: 22px; font-weight: 600; color: var(--dark); }
-.airport-name { font-size: 14px; color: #555; }
-.route-arrow { font-size: 24px; color: var(--gray); margin: 0 20px; }
+.flight-time { font-size: 22px; font-weight: 500; color: #303133; }
+.airport-name { font-size: 14px; color: #606266; }
+.route-arrow { font-size: 24px; color: #DCDFE6; margin: 0 20px; }
 .price-section { text-align: right; }
 .price-section .flight-price {
-    color: var(--danger); 
+    color: #F56C6C; 
+    font-size: 18px;
 }
 .price-section .flight-price span { font-size: 28px; font-weight: bold; }
 .price-section .flight-details { margin-top: 5px; }
-.action-section { justify-content: center; }
+.badge {
+  padding: 3px 8px;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 12px;
+}
+.badge-info { background-color: #909399; }
+.badge-gold { background-color: #E6A23C; }
+.action-section { display: flex; align-items: center; justify-content: center; }
+.btn-book {
+  padding: 8px 25px;
+  border: none;
+  background-color: #409EFF;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+.btn-book:hover { background-color: #66b1ff; }
 .btn-book:disabled {
-  background-color: var(--gray);
+  background-color: #c0c4cc;
   cursor: not-allowed;
 }
 </style>

@@ -1,266 +1,184 @@
 <template>
-  <div class="modal" @click.self="$emit('close')">
-    <div class="modal-content-styled">
-      <div class="heading">用户登录</div>
-      
-      <form @submit.prevent="handleLogin" class="form">
-        <div class="input-field">
-          <input type="text" id="login-username" v-model.trim="credentials.username" required />
-          <label for="login-username">手机号</label>
-        </div>
-
-        <div class="input-field">
-          <input :type="passwordFieldType" id="login-password" v-model="credentials.password" required />
-          <label for="login-password">密码</label>
-          <i :class="['passicon', isPasswordVisible ? 'fas fa-eye-slash' : 'fas fa-eye']" @click="togglePasswordVisibility"></i>
-        </div>
-
-        <!-- 【新增】用于显示错误信息的元素 -->
-        <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
-
-        <div class="btn-container">
-          <button type="submit" class="btn" :disabled="isLoading">
-            <span>{{ isLoading ? '登录中...' : '登录' }}</span>
-          </button>
-        </div>
-      </form>
-
-      <div class="switch-text text-center">
-        <p>还没有账号？ <a @click="$emit('switch-to-register')">立即注册</a></p>
+  <div class="modal" v-if="showModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">用户登录</h3>
+        <button class="close-btn" @click="closeModal">×</button>
       </div>
-
-      <button class="close-button" @click="$emit('close')">×</button>
+      <div class="modal-body">
+        <el-form :model="loginForm" :rules="rules" ref="loginForm" @submit.native.prevent="handleLogin">
+          <el-form-item prop="username">
+            <el-input v-model="loginForm.username" placeholder="手机号"></el-input>
+          </el-form-item>
+          <el-form-item prop="password">
+            <el-input type="password" v-model="loginForm.password" placeholder="密码"></el-input>
+          </el-form-item>
+          <el-alert
+            v-if="errorMessage"
+            :title="errorMessage"
+            type="error"
+            show-icon
+            :closable="false"
+            style="margin-bottom: 20px;">
+          </el-alert>
+          <el-form-item>
+            <el-button type="primary" @click="handleLogin" :loading="isLoading" style="width: 100%;">
+              {{ isLoading ? '登录中...' : '登录' }}
+            </el-button>
+          </el-form-item>
+        </el-form>
+        <div class="switch-text text-center">
+          还没有账号？ <a @click="switchToRegister">立即注册</a>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
-import api from '../api';
+// 【核心修改】直接引入 axios 和 Message
+import axios from 'axios';
+import { Message } from 'element-ui';
+import { store, mutations } from '@/store';
 
 export default {
   name: 'LoginModal',
   data() {
     return {
-      isLoading: false,
-      isPasswordVisible: false,
-      errorMessage: '', // 新增：用于存储错误信息
-      credentials: {
+      loginForm: {
         username: '',
         password: '',
       },
+      rules: {
+        username: [{ required: true, message: '请输入手机号', trigger: 'blur' }],
+        password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+      },
+      isLoading: false,
+      errorMessage: '',
     };
   },
   computed: {
-    passwordFieldType() {
-      return this.isPasswordVisible ? 'text' : 'password';
-    }
+    showModal() {
+      return store.showLoginModal;
+    },
   },
   methods: {
-    async handleLogin() {
-      this.isLoading = true;
-      this.errorMessage = ''; // 每次登录前清空错误信息
-
-      try {
-        const response = await api.login(this.credentials);
-        if (response.code === 200) {
-          this.$emit('login-success', response.data);
-        }
-      } catch (error) {
-        console.error("Login failed in component:", error);
-        
-        // 【核心修改】检查 error.response 对象是否存在以及其状态码
-        if (error.response && error.response.status === 401) {
-          // 如果是 401 错误，说明是认证失败，显示后端返回的特定消息
-          this.errorMessage = error.response.data.message || '手机号或密码错误';
-        } else {
-          // 对于其他错误（如500服务器错误、网络问题等），显示通用错误信息
-          // 注意：API拦截器可能已经弹出了全局消息，这里的消息是显示在模态框内部的
-          this.errorMessage = '登录时发生错误，请稍后重试。';
-        }
-      } finally {
-        this.isLoading = false;
-      }
+    closeModal() {
+      mutations.setShowLoginModal(false);
     },
-    togglePasswordVisibility() {
-      this.isPasswordVisible = !this.isPasswordVisible;
-    }
+    switchToRegister() {
+      mutations.setShowRegisterModal(true);
+    },
+    async handleLogin() {
+      this.$refs.loginForm.validate(async (valid) => {
+        if (valid) {
+          this.isLoading = true;
+          this.errorMessage = '';
+          try {
+            // 【核心修复】我们在这里创建一个全新的、独立的 Axios 请求
+            // 绕过所有外部可能被污染的实例
+            const response = await axios.post(
+              // 1. 请求 URL
+              'http://localhost:8080/api/auth/login', 
+              // 2. 请求体 (Body)
+              {
+                username: this.loginForm.username,
+                password: this.loginForm.password,
+              },
+              // 3. 配置对象，强制指定 headers
+              {
+                headers: {
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
+
+            // 后续逻辑与之前相同
+            const apiResponse = response.data; // axios 返回的 data 是我们 ApiResponse
+            if (apiResponse.code === 200) {
+              const loginData = apiResponse.data;
+              mutations.setUser(loginData, loginData.token);
+              Message.success('登录成功');
+              this.closeModal();
+            } else {
+              // 处理后端返回的业务错误
+              this.errorMessage = apiResponse.message || '登录失败';
+            }
+
+          } catch (error) {
+            console.error('Login failed in component:', error);
+            if (error.response) {
+              // 处理 HTTP 错误
+              this.errorMessage = error.response.data?.message || `登录失败，错误码: ${error.response.status}`;
+            } else {
+              this.errorMessage = '网络错误，请检查连接';
+            }
+          } finally {
+            this.isLoading = false;
+          }
+        }
+      });
+    },
   },
 };
 </script>
 
 <style scoped>
-/* 模态框背景 */
+/* 样式保持不变 */
 .modal {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  backdrop-filter: blur(5px);
 }
-
-/* 模态框内容区样式 */
-.modal-content-styled {
-  position: relative;
-  border: solid 1px #dcdcdc;
-  padding: 30px 40px;
-  border-radius: 20px;
-  background-color: #fff;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
-
-.modal-content-styled .heading {
-  font-size: 1.5rem;
-  margin-bottom: 25px;
-  font-weight: bolder;
-  text-align: center;
-  color: #333;
-}
-
-.form {
-  width: 300px;
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-}
-
-/* 按钮样式 */
-.form .btn-container {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  margin-top: 10px;
-}
-
-.form .btn {
-  padding: 10px 20px;
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 3px;
-  border-radius: 10px;
-  border: solid 1px #1034aa;
-  border-bottom: solid 1px #90c2ff;
-  background: linear-gradient(135deg, #0034de, #006eff);
-  color: #fff;
-  font-weight: bolder;
-  transition: all 0.2s ease;
-  box-shadow: 0px 2px 3px #000d3848, inset 0px 4px 5px #0070f0,
-    inset 0px -4px 5px #002cbb;
-  cursor: pointer;
-}
-
-.form .btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.form .btn:active {
-  box-shadow: inset 0px 4px 5px #0070f0, inset 0px -4px 5px #002cbb;
-  transform: scale(0.995);
-}
-
-/* 输入框浮动标签样式 */
-.input-field {
-  position: relative;
-}
-
-.input-field label {
-  position: absolute;
-  color: #8d8d8d;
-  pointer-events: none;
-  background-color: transparent;
-  left: 15px;
-  top: 0;
-  transform: translateY(0.7rem);
-  transition: all 0.2s ease-in-out;
-}
-
-.input-field input {
-  padding: 12px 15px;
-  font-size: 1rem;
+.modal-content {
+  background: white;
   border-radius: 8px;
-  border: solid 1px #8d8d8d;
-  letter-spacing: 1px;
   width: 100%;
-  box-sizing: border-box;
+  max-width: 400px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
-
-.input-field input:focus,
-.input-field input:valid {
-  outline: none;
-  border: solid 1px #0034de;
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
-
-.input-field input:focus ~ label,
-.input-field input:valid ~ label {
-  transform: translateY(-50%) translateX(-10px) scale(0.8);
-  background-color: #fff;
-  padding: 0px 5px;
-  color: #0034de;
-  font-weight: bold;
+.modal-title {
+  font-size: 20px;
+  font-weight: 600;
 }
-
-.form .passicon {
+.modal-body {
+  padding: 20px;
+}
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
   cursor: pointer;
-  font-size: 1.2rem;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  right: 12px;
-  color: #8d8d8d;
-  transition: color 0.2s;
+  color: #909399;
 }
-.form .passicon:hover {
-  color: #333;
-}
-
-/* 附加样式 */
 .switch-text {
-  margin-top: 25px;
-  color: var(--gray);
+  margin-top: 15px;
   font-size: 14px;
+  color: #606266;
 }
 .switch-text a {
-  color: var(--primary);
+  color: #409eff;
   cursor: pointer;
   text-decoration: none;
-  font-weight: 500;
 }
 .switch-text a:hover {
   text-decoration: underline;
 }
 .text-center {
   text-align: center;
-}
-
-.close-button {
-  position: absolute;
-  top: 15px;
-  right: 20px;
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #aaa;
-  transition: color 0.2s;
-}
-.close-button:hover {
-  color: #333;
-}
-/* 【新增】错误信息的样式 */
-.error-message {
-  color: #e53935; /* 使用 main.css 中的 var(--danger) 颜色 */
-  background-color: #ffebee;
-  border: 1px solid #e53935;
-  border-radius: 8px;
-  padding: 10px;
-  text-align: center;
-  font-size: 14px;
-  margin-top: -10px; /* 调整位置，使其更靠近输入框 */
 }
 </style>

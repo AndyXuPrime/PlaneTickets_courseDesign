@@ -46,8 +46,7 @@ export default {
   },
   methods: {
     /**
-     * 【核心修正】处理搜索事件，现在接收一个纯字符串
-     * @param {string} flightNumber - 从子组件传来的航班号
+     * @param {string} flightNumber 
      */
     async handleStatusSearch(flightNumber) {
       this.isLoading = true;
@@ -55,7 +54,7 @@ export default {
       this.flightResult = null;
 
       try {
-        // 直接将 flightNumber 字符串传递给API方法
+        
         const response = await api.getFlightStatus(flightNumber);
         this.flightResult = response.data;
       } catch (error) {
@@ -70,7 +69,6 @@ export default {
 </script>
 
 <style scoped>
-/* 样式保持不变 */
 .hero-banner{background:linear-gradient(rgba(20,80,180,.7),rgba(10,40,100,.8)),url(https://images.unsplash.com/photo-1570715722755-58f86a5a55a5?auto=format&fit=crop&w=1920&q=80);background-size:cover;background-position:center;color:#fff;padding:80px 20px;text-align:center}
 .hero-content h1{font-size:42px;font-weight:700;margin-bottom:15px}
 .search-container{margin-top:-60px;position:relative;z-index:10}

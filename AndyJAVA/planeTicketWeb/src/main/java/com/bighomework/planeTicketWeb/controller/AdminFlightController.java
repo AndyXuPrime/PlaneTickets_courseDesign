@@ -1,22 +1,31 @@
 package com.bighomework.planeTicketWeb.controller;
 
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.bighomework.planeTicketWeb.dto.admin.FlightAdminDTO;
 import com.bighomework.planeTicketWeb.dto.admin.FlightRequest;
 import com.bighomework.planeTicketWeb.service.AdminFlightService;
 import com.bighomework.planeTicketWeb.util.ApiResponse;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/flights")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')") // 【安全】要求用户具有ADMIN角色才能访问，你需要设置用户角色
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminFlightController {
 
     private final AdminFlightService adminFlightService;

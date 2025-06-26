@@ -19,7 +19,7 @@ import AppFooter from './components/AppFooter.vue';
 import LoginModal from './components/LoginModal.vue';
 import RegisterModal from './components/RegisterModal.vue';
 import { store, mutations } from './store';
-import api from './api'; // 假设您的 index.js 导出的模块名为 'api'
+import api from './api'; 
 
 export default {
   name: 'App',
@@ -44,13 +44,13 @@ export default {
       mutations.setShowRegisterModal(false);
     },
      onLoginSuccess(loginData) {
-      // loginData 现在是 { token, username, name, membershipLevel }
+      
       const userData = {
         username: loginData.username, // 手机号
-        name: loginData.name,         // 真实姓名
-        level: loginData.membershipLevel, // 会员等级 (枚举字符串)
+        name: loginData.name,         
+        level: loginData.membershipLevel,
       };
-      // 调用 mutation 保存完整的用户信息和token
+      
       mutations.setUser(userData, loginData.token);
       this.closeModals();
       this.$message.success('登录成功!');

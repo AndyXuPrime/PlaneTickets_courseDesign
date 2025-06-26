@@ -83,28 +83,26 @@ export default {
 </script>
 
 <style scoped>
-/* 定义主色调 */
 :root {
-  --theme-primary: #0033a0; /* 深蓝色 */
-  --theme-secondary: #00a0e9; /* 天蓝色/青色 */
-  --theme-accent: #e87722; /* 橙色，用于按钮 */
-  --theme-bg-light: #f5f7fa; /* 浅灰色背景 */
-  --theme-text-dark: #2c3e50; /* 深色文字 */
-  --theme-text-light: #5a6a7a; /* 浅色文字 */
+  --theme-primary: #0033a0; 
+  --theme-secondary: #00a0e9; 
+  --theme-accent: #e87722; 
+  --theme-bg-light: #f5f7fa; 
+  --theme-text-dark: #2c3e50; 
+  --theme-text-light: #5a6a7a; 
 }
 
 .profile-page {
-  max-width: 1100px; /* 调整最大宽度以适应4列布局 */
+  max-width: 1100px;
   margin: 20px auto;
   padding: 20px;
 }
 
-/* 特色服务网格 */
 .features-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 20px;
-  margin-bottom: 50px; /* 增加与下方内容的间距 */
+  margin-bottom: 50px; 
 }
 .feature-card {
   background-color: var(--theme-bg-light);
@@ -132,7 +130,7 @@ export default {
   color: var(--theme-text-dark);
 }
 
-/* 图片加载失败占位符 */
+
 ::v-deep .image-placeholder {
   width: 100%;
   height: 160px;
@@ -144,11 +142,11 @@ export default {
   font-size: 48px;
 }
 
-/* 折叠面板 (Accordion) */
+
 .info-accordion {
   margin-bottom: 50px;
 }
-/* 覆盖 Element UI 的默认样式 */
+
 ::v-deep .el-collapse {
   border-top: none;
   border-bottom: none;
@@ -158,7 +156,7 @@ export default {
 }
 ::v-deep .el-collapse-item__header {
   background-color: var(--theme-bg-light);
-  padding: 15px 25px; /* 调整内边距 */
+  padding: 15px 25px; 
   font-size: 1rem;
   font-weight: 500;
   color: var(--theme-text-dark);
@@ -189,20 +187,20 @@ export default {
   color: var(--theme-text-light);
 }
 
-/* 帮助区域 */
+
 .help-section {
-  text-align: left; /* 文本左对齐 */
-  padding: 0; /* 移除背景和内边距 */
+  text-align: left;
+  padding: 0; 
   background-color: transparent;
 }
 .help-section h3 {
-  font-size: 1.5rem; /* 字体变大 */
+  font-size: 1.5rem; 
   margin-bottom: 20px;
   color: var(--theme-text-dark);
   font-weight: 600;
 }
 .btn-consult {
-  background-color: var(--theme-accent, #e87722); /* 使用主题色变量 */
+  background-color: var(--theme-accent, #e87722); 
   color: white;
   border: none;
   padding: 12px 40px;

@@ -16,13 +16,6 @@ public interface CustomerRepository extends JpaRepository<Customer, Integer> {
 
     Optional<Customer> findByPhone(String phone);
 
-    /**
-     * 【核心新增】
-     * 根据身份证号查找客户。这是修复注册功能BUG所必需的。
-     * Spring Data JPA 会根据方法名自动生成此查询的实现。
-     * @param idCard 身份证号
-     * @return 包含客户信息的Optional对象
-     */
     Optional<Customer> findByIdCard(String idCard);
 
     /**
@@ -31,15 +24,18 @@ public interface CustomerRepository extends JpaRepository<Customer, Integer> {
     @Query("SELECT new com.bighomework.planeTicketWeb.dto.stats.CustomerAnalysisDTO(" +
            "       c.gender, " +
            "       COUNT(t.id), " +
-           "       AVG(t.finalPrice) " +
+           "       AVG(t.price) " +
            ") " +
-           "FROM Ticket t JOIN t.customer c " +
+           // 【核心修复】将 t.customer c 修改为 t.passenger c，以匹配 Ticket 实体中的字段名
+           "FROM Ticket t JOIN t.passenger c " + 
            "WHERE t.status IN (com.bighomework.planeTicketWeb.enums.TicketStatus.已支付, com.bighomework.planeTicketWeb.enums.TicketStatus.已使用) " +
            "GROUP BY c.gender")
     List<CustomerAnalysisDTO> analyzeByGender();
 
     /**
      * 按年龄段分析客户购票规律 (原生SQL)。
+     * 注意：原生SQL查询的是数据库的物理列名，不受Java实体字段名重命名的影响。
+     * tickets 表中的列名依然是 customer_id，所以这里的 ON t.customer_id = c.customer_id 是正确的，无需修改。
      */
     @Query(value = "SELECT " +
             "  CASE " +
@@ -49,7 +45,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Integer> {
             "    ELSE '老年 (60+)' " +
             "  END AS dimension, " +
             "  COUNT(t.ticket_id) AS ticketCount, " +
-            "  AVG(t.final_price) AS averageSpent " +
+            "  AVG(t.price) AS averageSpent " +
             "FROM tickets t JOIN customers c ON t.customer_id = c.customer_id " +
             "WHERE t.status IN ('已支付', '已使用') " +
             "GROUP BY dimension " +

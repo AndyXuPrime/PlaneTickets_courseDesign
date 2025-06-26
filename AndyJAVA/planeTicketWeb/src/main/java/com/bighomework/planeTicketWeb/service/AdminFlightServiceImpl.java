@@ -1,5 +1,11 @@
 package com.bighomework.planeTicketWeb.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.bighomework.planeTicketWeb.dto.admin.FlightAdminDTO;
 import com.bighomework.planeTicketWeb.dto.admin.FlightRequest;
 import com.bighomework.planeTicketWeb.entity.Airline;
@@ -7,19 +13,15 @@ import com.bighomework.planeTicketWeb.entity.Flight;
 import com.bighomework.planeTicketWeb.exception.BusinessException;
 import com.bighomework.planeTicketWeb.repository.AirlineRepository;
 import com.bighomework.planeTicketWeb.repository.FlightRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class AdminFlightServiceImpl implements AdminFlightService {
 
     private final FlightRepository flightRepository;
-    private final AirlineRepository airlineRepository; // 需要注入 AirlineRepository
+    private final AirlineRepository airlineRepository; 
 
     @Override
     public List<FlightAdminDTO> getAllFlights() {
@@ -56,7 +58,7 @@ public class AdminFlightServiceImpl implements AdminFlightService {
         if (!flightRepository.existsById(flightNumber)) {
             throw new BusinessException("航班号 " + flightNumber + " 不存在。");
         }
-        // 注意：如果已有订单关联此航班，直接删除可能会失败。需要更复杂的逻辑（如软删除）。
+        
         flightRepository.deleteById(flightNumber);
     }
 

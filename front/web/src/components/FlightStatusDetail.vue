@@ -110,7 +110,7 @@ export default {
 .arrow-line {
   flex-grow: 1;
   height: 2px;
-  background-color: #e0e0e0;
+  background-color: #0a25bd;
   margin: 0 20px;
   position: relative;
 }

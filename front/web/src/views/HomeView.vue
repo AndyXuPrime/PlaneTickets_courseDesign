@@ -57,20 +57,20 @@ export default {
       searchMode: 'byRoute',
       isLoading: false,
       flights: [],
-      lastSearchParams: null, // 存储上一次的搜索参数
-      isInitialLoad: true, // 标记是否为初始加载
+      lastSearchParams: null, 
+      isInitialLoad: true, 
     };
   },
   computed: {
-    // 动态显示结果区的标题
+    
     resultTitle() {
       return this.isInitialLoad ? '今日推荐航班' : '查询结果';
     },
-    // 显示的日期，优先使用搜索日期，否则为今天
+    
     displayDate() {
       return this.lastSearchParams?.flightDate || new Date().toISOString().split('T')[0];
     },
-    // 动态生成搜索摘要
+    
     searchSummary() {
       if (!this.lastSearchParams) return `日期: ${this.displayDate}`;
       if (this.lastSearchParams.searchType === 'byRoute') {
@@ -84,11 +84,11 @@ export default {
     }
   },
   created() {
-    // 组件创建时，执行初始航班加载
+    
     this.loadInitialFlights();
   },
   methods: {
-    // 加载所有航班作为默认显示
+    
     async loadInitialFlights() {
       this.isLoading = true;
       this.isInitialLoad = true;
@@ -103,10 +103,10 @@ export default {
         this.isLoading = false;
       }
     },
-    // 处理搜索事件
+    
     async handleSearch(searchParams) {
       this.isLoading = true;
-      this.isInitialLoad = false; // 用户已执行搜索
+      this.isInitialLoad = false; 
       this.flights = [];
       
       let apiParams;
@@ -139,7 +139,6 @@ export default {
 </script>
 
 <style scoped>
-/* 这些样式之前已经定义过，这里是回顾 */
 .loading-state, .no-results-state {
   text-align: center;
   padding: 40px 20px;
