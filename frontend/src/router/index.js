@@ -15,14 +15,7 @@ const routes = [
     meta: { title: '航班查询' } // meta 信息，用于设置页面标题等
   },
 
-  // 2. 航班搜索结果页 (可选，但推荐)
-  // 如果你的设计是将结果直接展示在首页，可以不加这个路由
-  {
-    path: '/flights',
-    name: 'FlightStatus',
-    component: () => import('../views/FlightStatusView.vue'),
-    meta: { title: '航班动态' }
-  },
+
 
   // 3. 订单确认/预订页面
   {
