@@ -30,8 +30,8 @@
 项目旨在解决课程设计中常见的技术难点，如 JWT 身份认证、复杂 SQL 查询、前后端跨域交互以及 VS Code 环境下的 Java 开发配置。
 
 ### 🔗 仓库地址
-- **后端 (Backend):** [backend](https://github.com/AndyXuPrime/PlaneTickets_courseDesign/backend)
-- **前端 (Frontend):** [frontend](https://github.com/AndyXuPrime/PlaneTickets_courseDesign/frontend)
+- **后端 (Backend):** [backend](https://github.com/AndyXuPrime/PlaneTickets_courseDesign/tree/main/backend)
+- **前端 (Frontend):** [frontend](https://github.com/AndyXuPrime/PlaneTickets_courseDesign/tree/main/frontend)
 
 ---
 
