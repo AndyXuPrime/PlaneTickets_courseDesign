@@ -84,7 +84,7 @@
 2. 执行下文 [数据库设计](#-数据库设计) 中的 SQL 建表语句。
 3. 修改后端配置文件 `src/main/resources/application.properties`：
    ```properties
-   spring.datasource.username=root
+   spring.datasource.username=你的用户名一般为root
    spring.datasource.password=你的真实密码
    ```
 
@@ -252,5 +252,5 @@ TABLE `ticket_status_log` (
 ---
 
 <div align="center">
-  <sub>Designed by AndyXuPrime | Course Design 2025</sub>
+  <sub>Designed by AndyXuPrime | 课程设计 |Course Design 2024</sub>
 </div>
