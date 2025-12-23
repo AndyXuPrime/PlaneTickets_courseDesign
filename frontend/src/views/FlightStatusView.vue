@@ -9,9 +9,9 @@
     <div class="container search-container">
       <div class="card search-card">
         <div class="tab-content">
-          <flight-status-search-form 
-            @search="handleStatusSearch"
-            :is-loading="isLoading"
+          <flight-status-search-form
+              @search="handleStatusSearch"
+              :is-loading="isLoading"
           />
         </div>
       </div>
@@ -21,10 +21,19 @@
       <div v-if="isLoading" class="loading-state">
         <i class="el-icon-loading"></i><p>正在查询航班动态...</p>
       </div>
-      <div v-else-if="!flightResult" class="no-results-state">
+      <!-- 【修改】flightResults 数组为空时显示 -->
+      <div v-else-if="!flightResults || flightResults.length === 0" class="no-results-state">
         <i class="el-icon-info"></i><p>未找到该航班信息，请检查航班号是否正确。</p>
       </div>
-      <flight-status-detail v-else :flight="flightResult" />
+      <!-- 【修改】遍历 flightResults 数组，渲染多张卡片 -->
+      <div v-else>
+        <flight-status-detail
+            v-for="flight in flightResults"
+            :key="flight.flightNumber"
+            :flight="flight"
+            class="mb-3"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -41,25 +50,25 @@ export default {
     return {
       isLoading: false,
       searchPerformed: false,
-      flightResult: null,
+      flightResults: [], // 【修改】这里从单个对象改为数组
     };
   },
   methods: {
     /**
-     * @param {string} flightNumber 
+     * @param {string} flightNumber
      */
     async handleStatusSearch(flightNumber) {
       this.isLoading = true;
       this.searchPerformed = true;
-      this.flightResult = null;
+      this.flightResults = []; // 清空数组
 
       try {
-        
         const response = await api.getFlightStatus(flightNumber);
-        this.flightResult = response.data;
+        // 【修改】后端现在返回的是 List，直接赋值
+        this.flightResults = response.data;
       } catch (error) {
         console.error("航班动态查询失败:", error);
-        this.flightResult = null;
+        this.flightResults = [];
       } finally {
         this.isLoading = false;
       }
@@ -77,4 +86,5 @@ export default {
 .results-container{margin-top:30px}
 .loading-state,.no-results-state{text-align:center;padding:40px;color:var(--gray)}
 .loading-state i,.no-results-state i{font-size:48px;margin-bottom:20px;display:block}
+.mb-3 { margin-bottom: 1.5rem; } /* 新增间距样式 */
 </style>

@@ -36,25 +36,27 @@ public class FlightController {
 
     @GetMapping("/all")
     public ResponseEntity<ApiResponse<List<FlightSearchVO>>> getAllFlights(
-        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate flightDate) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate flightDate) {
         List<FlightSearchVO> flights = flightService.findAllAvailableFlights(flightDate);
         return ResponseEntity.ok(ApiResponse.success(flights));
     }
 
 
     @GetMapping("/status")
-    public ResponseEntity<ApiResponse<FlightSearchVO>> getFlightStatus(
-            @RequestParam String flightNumber) { 
-                
-        FlightSearchVO flight = flightService.findFlightByNumber(flightNumber);
-        return ResponseEntity.ok(ApiResponse.success(flight));
+    // 【修改】返回类型改为 List<FlightSearchVO>
+    public ResponseEntity<ApiResponse<List<FlightSearchVO>>> getFlightStatus(
+            @RequestParam String flightNumber) {
+
+        List<FlightSearchVO> flights = flightService.findFlightByNumber(flightNumber);
+        return ResponseEntity.ok(ApiResponse.success(flights));
     }
 
 
     @GetMapping("/{flightNumber}")
-    public ResponseEntity<ApiResponse<FlightSearchVO>> getFlightByNumber(
+    // 【修改】返回类型改为 List<FlightSearchVO>
+    public ResponseEntity<ApiResponse<List<FlightSearchVO>>> getFlightByNumber(
             @PathVariable String flightNumber) {
-        FlightSearchVO flight = flightService.findFlightByNumber(flightNumber);
-        return ResponseEntity.ok(ApiResponse.success(flight));
+        List<FlightSearchVO> flights = flightService.findFlightByNumber(flightNumber);
+        return ResponseEntity.ok(ApiResponse.success(flights));
     }
 }

@@ -29,8 +29,8 @@ public class FlightServiceImpl implements FlightService {
     private final PricingStrategy pricingStrategy;
 
     // ... 手动构造函数 ...
-    public FlightServiceImpl(FlightRepository flightRepository, 
-                             TicketRepository ticketRepository, 
+    public FlightServiceImpl(FlightRepository flightRepository,
+                             TicketRepository ticketRepository,
                              PricingStrategy pricingStrategy) { // 确保参数里有它
         this.flightRepository = flightRepository;
         this.ticketRepository = ticketRepository;
@@ -40,7 +40,7 @@ public class FlightServiceImpl implements FlightService {
     @Override
     public List<FlightSearchVO> searchAvailableFlights(String searchType, String value, LocalDate date) {
         logger.info("Searching for flights with type '{}', value '{}' on date {}", searchType, value, date);
-        
+
         List<Flight> flights;
 
         switch (searchType) {
@@ -75,7 +75,7 @@ public class FlightServiceImpl implements FlightService {
     public List<FlightSearchVO> findAllAvailableFlights(LocalDate date) {
         logger.info("Fetching all flights for date {}", date);
         List<Flight> flights = flightRepository.findAllWithAirline();
-        
+
         if (flights.isEmpty()) {
             return List.of();
         }
@@ -88,32 +88,39 @@ public class FlightServiceImpl implements FlightService {
     @Override
     public FlightSearchVO findFlightByNumberAndDate(String flightNumber, LocalDate date) {
         logger.info("Finding flight by number {} on date {}", flightNumber, date);
-        
+
         Flight flight = flightRepository.findByIdAndFetchAirline(flightNumber)
                 .orElseThrow(() -> new BusinessException("航班号 " + flightNumber + " 不存在"));
-        
+
         return convertToFlightSearchVO(flight, date);
     }
 
     @Override
-    public FlightSearchVO findFlightByNumber(String flightNumber) {
-        logger.info("Finding flight by number: {}", flightNumber);
-        
-        Flight flight = flightRepository.findByIdAndFetchAirline(flightNumber)
-                .orElseThrow(() -> new BusinessException("航班号 " + flightNumber + " 不存在"));
-        
-                
+    // 【修改】返回类型为 List
+    public List<FlightSearchVO> findFlightByNumber(String flightNumber) {
+        logger.info("Finding flights matching number: {}", flightNumber);
+
+        // 调用新的模糊查询方法
+        List<Flight> flights = flightRepository.findByFlightNumberContaining(flightNumber);
+
+        if (flights.isEmpty()) {
+            throw new BusinessException("未找到包含 '" + flightNumber + "' 的航班");
+        }
+
         LocalDate today = LocalDate.now();
-        
-        return convertToFlightSearchVO(flight, today);
+
+        // 将所有匹配的航班转换为 VO
+        return flights.stream()
+                .map(flight -> convertToFlightSearchVO(flight, today))
+                .collect(Collectors.toList());
     }
 
     private FlightSearchVO convertToFlightSearchVO(Flight flight, LocalDate date) {
         String airlineName = (flight.getAirline() != null) ? flight.getAirline().getAirlineName() : "未知航空公司";
-        
+
         SeatInfo economySeatInfo = calculateSeatInfo(flight, date, CabinClass.经济舱);
         SeatInfo businessSeatInfo = calculateSeatInfo(flight, date, CabinClass.商务舱);
-        
+
         FlightSearchVO vo = new FlightSearchVO();
         vo.setFlightNumber(flight.getFlightNumber());
         vo.setAirlineName(airlineName);
@@ -122,19 +129,19 @@ public class FlightServiceImpl implements FlightService {
         vo.setDepartureTime(flight.getDepartureTime());
         vo.setArrivalTime(flight.getArrivalTime());
 
-        
+
         if (economySeatInfo.getRemainingSeats() > 0) {
             vo.setPrice(economySeatInfo.getPrice());
             vo.setRemainingSeats(economySeatInfo.getRemainingSeats());
             vo.setCabinClassForDisplay(CabinClass.经济舱.name());
-        } 
-       
+        }
+
         else if (businessSeatInfo.getRemainingSeats() > 0) {
             vo.setPrice(businessSeatInfo.getPrice());
             vo.setRemainingSeats(businessSeatInfo.getRemainingSeats());
             vo.setCabinClassForDisplay(CabinClass.商务舱.name());
-        } 
-        
+        }
+
         else {
             vo.setPrice(economySeatInfo.getPrice());
             vo.setRemainingSeats(0);
@@ -150,10 +157,10 @@ public class FlightServiceImpl implements FlightService {
                 List.of(TicketStatus.已预订, TicketStatus.已支付, TicketStatus.已使用)
         );
 
-        
+
         Short totalSeatsShort = (cabinClass == CabinClass.经济舱) ? flight.getEconomySeats() : flight.getBusinessSeats();
         int totalSeats = (totalSeatsShort != null) ? totalSeatsShort : 0;
-        
+
         int remainingSeats = Math.max(0, totalSeats - soldSeats);
         return new SeatInfo(price, remainingSeats);
     }
