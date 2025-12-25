@@ -7,12 +7,15 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="planeTicketWeb" />
+        <module name="common-module" />
+        <module name="flight-service" />
       </profile>
     </annotationProcessing>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="common-module" options="-parameters" />
+      <module name="flight-service" options="-parameters" />
       <module name="planeTicketWeb" options="-parameters" />
     </option>
   </component>
