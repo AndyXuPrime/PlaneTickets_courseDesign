@@ -1,0 +1,8 @@
+com\bighomework\auth\config\SecurityConfig.class
+com\bighomework\auth\controller\AuthController.class
+com\bighomework\auth\repository\UserRepository.class
+com\bighomework\auth\service\impl\AuthServiceImpl.class
+com\bighomework\auth\AuthApplication.class
+com\bighomework\auth\entity\User.class
+com\bighomework\auth\service\impl\UserDetailsServiceImpl.class
+com\bighomework\auth\service\AuthService.class
