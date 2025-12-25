@@ -1,1 +1,13 @@
 frontend/node_modules/
+/backend/auth-service/target/auth-service-0.0.1-SNAPSHOT.jar
+/backend/auth-service/target/auth-service-0.0.1-SNAPSHOT.jar.original
+/backend/auth-service/target/classes/com/bighomework/auth/AuthApplication.class
+/backend/auth-service/target/classes/com/bighomework/auth/controller/AuthController.class
+/backend/auth-service/target/classes/com/bighomework/auth/service/AuthService.class
+/backend/auth-service/target/classes/com/bighomework/auth/service/impl/AuthServiceImpl.class
+/backend/auth-service/target/maven-archiver/pom.properties
+/backend/auth-service/target/classes/com/bighomework/auth/config/SecurityConfig.class
+/backend/auth-service/target/classes/com/bighomework/auth/entity/User.class
+/backend/auth-service/target/classes/com/bighomework/auth/service/impl/UserDetailsServiceImpl.class
+/backend/auth-service/target/classes/com/bighomework/auth/repository/UserRepository.class
+/backend/common-module/target/classes/com/bighomework/common/enums/UserStatus.class
