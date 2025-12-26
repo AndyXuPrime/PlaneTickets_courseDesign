@@ -1,6 +1,6 @@
-package com.bighomework.planeTicketWeb.entity;
+package com.bighomework.order.entity;
 
-import com.bighomework.planeTicketWeb.enums.TicketStatus;
+import com.bighomework.common.enums.TicketStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;

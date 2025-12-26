@@ -6,9 +6,11 @@ D:\LearnSomeComputerPrograms VSCode\AndyJava\PlaneTickets_courseDesign-main\back
 D:\LearnSomeComputerPrograms VSCode\AndyJava\PlaneTickets_courseDesign-main\backend\common-module\src\main\java\com\bighomework\common\dto\requestDTO\RegisterRequest.java
 D:\LearnSomeComputerPrograms VSCode\AndyJava\PlaneTickets_courseDesign-main\backend\common-module\src\main\java\com\bighomework\common\dto\requestDTO\BookingRequest.java
 D:\LearnSomeComputerPrograms VSCode\AndyJava\PlaneTickets_courseDesign-main\backend\common-module\src\main\java\com\bighomework\common\dto\responseDTO\FlightSearchVO.java
+D:\LearnSomeComputerPrograms VSCode\AndyJava\PlaneTickets_courseDesign-main\backend\common-module\src\main\java\com\bighomework\common\feign\AuthFeignClient.java
 D:\LearnSomeComputerPrograms VSCode\AndyJava\PlaneTickets_courseDesign-main\backend\common-module\src\main\java\com\bighomework\common\dto\responseDTO\TicketInOrderVO.java
 D:\LearnSomeComputerPrograms VSCode\AndyJava\PlaneTickets_courseDesign-main\backend\common-module\src\main\java\com\bighomework\common\enums\UserRole.java
 D:\LearnSomeComputerPrograms VSCode\AndyJava\PlaneTickets_courseDesign-main\backend\common-module\src\main\java\com\bighomework\common\exception\BusinessException.java
+D:\LearnSomeComputerPrograms VSCode\AndyJava\PlaneTickets_courseDesign-main\backend\common-module\src\main\java\com\bighomework\common\feign\FlightFeignClient.java
 D:\LearnSomeComputerPrograms VSCode\AndyJava\PlaneTickets_courseDesign-main\backend\common-module\src\main\java\com\bighomework\common\dto\requestDTO\LoginRequest.java
 D:\LearnSomeComputerPrograms VSCode\AndyJava\PlaneTickets_courseDesign-main\backend\common-module\src\main\java\com\bighomework\common\dto\stats\RouteAnalysisDTO.java
 D:\LearnSomeComputerPrograms VSCode\AndyJava\PlaneTickets_courseDesign-main\backend\common-module\src\main\java\com\bighomework\common\enums\Gender.java

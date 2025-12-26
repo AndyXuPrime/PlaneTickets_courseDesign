@@ -12,6 +12,7 @@ com\bighomework\common\dto\admin\FlightAdminDTO.class
 com\bighomework\common\enums\UserRole.class
 com\bighomework\common\dto\requestDTO\BookingRequest$BookingRequestBuilder.class
 com\bighomework\common\dto\stats\RouteSalesDTO.class
+com\bighomework\common\feign\AuthFeignClient.class
 com\bighomework\common\enums\UserStatus.class
 com\bighomework\common\dto\requestDTO\RegisterRequest.class
 com\bighomework\common\dto\stats\RouteAnalysisDTO.class
@@ -25,5 +26,6 @@ com\bighomework\common\exception\GlobalExceptionHandler.class
 com\bighomework\common\dto\requestDTO\LoginRequest.class
 com\bighomework\common\dto\responseDTO\TicketInOrderVO.class
 com\bighomework\common\dto\stats\GenericStatDTO.class
+com\bighomework\common\feign\FlightFeignClient.class
 com\bighomework\common\dto\admin\FlightRequest.class
 com\bighomework\common\dto\responseDTO\FlightSearchVO.class

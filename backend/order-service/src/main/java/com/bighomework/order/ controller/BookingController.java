@@ -1,74 +1,53 @@
-package com.bighomework.planeTicketWeb.controller;
+package com.bighomework.order.controller;
 
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired; // 1. 确保引入了 Autowired
+import com.bighomework.common.dto.requestDTO.BookingRequest;
+import com.bighomework.common.dto.responseDTO.LogicalOrderVO;
+import com.bighomework.common.dto.responseDTO.TicketVO;
+import com.bighomework.common.util.ApiResponse;
+import com.bighomework.order.service.TicketService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import com.bighomework.planeTicketWeb.dto.requestDTO.BookingRequest;
-import com.bighomework.planeTicketWeb.dto.responseDTO.LogicalOrderVO;
-import com.bighomework.planeTicketWeb.dto.responseDTO.TicketVO;
-import com.bighomework.planeTicketWeb.entity.Customer;
-import com.bighomework.planeTicketWeb.exception.BusinessException;
-import com.bighomework.planeTicketWeb.repository.CustomerRepository;
-import com.bighomework.planeTicketWeb.service.TicketService;
-import com.bighomework.planeTicketWeb.util.ApiResponse;
-
-import jakarta.validation.Valid;
-// import lombok.RequiredArgsConstructor; // 2. 这里的注释非常重要，确保这一行没有生效
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/bookings")
 @Slf4j
+@RequiredArgsConstructor
 public class BookingController {
 
-    @Autowired
-    private TicketService ticketService;
-    
-    @Autowired
-    private CustomerRepository customerRepository;
-
+    private final TicketService ticketService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<List<TicketVO>>> createBooking(
-            @Valid 
             @RequestBody BookingRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        log.info("createBooking-request:{}",request);
-        log.info("createBooking-userDetails:{}",userDetails);
+            @RequestHeader("X-User-Name") String username) { // 从 Gateway 传来的 Header 获取用户名
 
-        Customer booker = customerRepository.findByPhone(userDetails.getUsername())
-                .orElseThrow(() -> new BusinessException("预订人信息不存在"));
-        log.info("booker:{}",booker);
-        List<TicketVO> createdTickets = ticketService.createTickets(request, booker.getCustomerId());
-        
+        log.info("收到下单请求: user={}, flight={}", username, request.getFlightNumber());
+
+        // 调用 Service，传入用户名 (Service 内部会去 Auth 服务查 ID)
+        List<TicketVO> createdTickets = ticketService.createTickets(request, username);
+
         return new ResponseEntity<>(ApiResponse.success(createdTickets, "预订成功"), HttpStatus.CREATED);
     }
 
-
     @GetMapping("/my-tickets")
-    public ResponseEntity<ApiResponse<List<LogicalOrderVO>>> getMyOrders(@AuthenticationPrincipal UserDetails userDetails) {
-        List<LogicalOrderVO> orders = ticketService.getMyOrders(userDetails.getUsername());
+    public ResponseEntity<ApiResponse<List<LogicalOrderVO>>> getMyOrders(
+            @RequestHeader("X-User-Name") String username) {
+
+        List<LogicalOrderVO> orders = ticketService.getMyOrders(username);
         return ResponseEntity.ok(ApiResponse.success(orders));
     }
 
-    
     @PostMapping("/tickets/{ticketId}/refund")
     public ResponseEntity<ApiResponse<Void>> refundTicket(
             @PathVariable Long ticketId,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        
-        ticketService.refundTicket(ticketId, userDetails.getUsername());
+            @RequestHeader("X-User-Name") String username) {
+
+        ticketService.refundTicket(ticketId, username);
         return ResponseEntity.ok(ApiResponse.success(null, "退票申请已提交"));
     }
 }
