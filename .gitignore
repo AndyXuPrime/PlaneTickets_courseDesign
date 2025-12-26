@@ -11,3 +11,9 @@ frontend/node_modules/
 /backend/auth-service/target/classes/com/bighomework/auth/service/impl/UserDetailsServiceImpl.class
 /backend/auth-service/target/classes/com/bighomework/auth/repository/UserRepository.class
 /backend/common-module/target/classes/com/bighomework/common/enums/UserStatus.class
+/backend/auth-service/target/
+/backend/common-module/target/
+/backend/flight-service/target/
+/backend/gateway-service/target/
+/backend/order-service/target/
+/backend/target/
