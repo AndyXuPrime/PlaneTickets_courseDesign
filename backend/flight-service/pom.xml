@@ -15,7 +15,7 @@
     <packaging>jar</packaging>
 
     <dependencies>
-        <!-- Nacos -->
+        <!-- ==================== Nacos ==================== -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
@@ -29,7 +29,7 @@
             <artifactId>spring-cloud-starter-bootstrap</artifactId>
         </dependency>
 
-        <!-- Web & Redis -->
+        <!-- ==================== Web & Redis ==================== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -38,32 +38,24 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
-        <!-- MinIO 对象存储 (用于上传航司Logo) -->
+
+        <!-- ==================== MinIO ==================== -->
+        <!-- 只需要引入这一个，它会自动下载 okhttp -->
         <dependency>
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
             <version>8.5.7</version>
         </dependency>
-        <!-- MinIO 需要的 HTTP 客户端 (通常 MinIO 会自动引入，但显式声明更稳妥) -->
-        <dependency>
-            <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp</artifactId>
-            <version>4.12.0</version>
-        </dependency>
-        <!-- Common 模块 -->
+
+        <!-- ==================== Common 模块 ==================== -->
         <dependency>
             <groupId>com.bighomework</groupId>
             <artifactId>common-module</artifactId>
             <version>0.0.1-SNAPSHOT</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-web</artifactId>
-                </exclusion>
-            </exclusions>
+            <!-- 注意：Flight Service 是 Web 服务，所以不需要像 Gateway 那样排除 web 依赖 -->
         </dependency>
 
-        <!-- 数据库 -->
+        <!-- ==================== 数据库 ==================== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -74,15 +66,15 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- 测试 -->
+        <!-- ==================== 工具 & 测试 ==================== -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
         </dependency>
     </dependencies>
 

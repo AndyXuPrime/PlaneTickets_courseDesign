@@ -1,6 +1,7 @@
 package com.bighomework.filter;
 
 import com.bighomework.common.security.JwtTokenProvider;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -12,6 +13,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+@Slf4j // 引入日志
 @Component
 public class AuthGlobalFilter implements GlobalFilter, Ordered {
 
@@ -22,46 +24,59 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
     private static final String[] WHITE_LIST = {
             "/api/auth/login",
             "/api/auth/register",
-            "/api/flights/search" // 假设搜索航班不需要登录
+            "/api/flights/search",
+            "/api/flights/all" // 建议把这个也加上
     };
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
+        log.info("Gateway拦截请求: {}", path);
 
-        // 1.如果是白名单，直接放行
+        // 1. 白名单放行
         for (String whitePath : WHITE_LIST) {
             if (path.startsWith(whitePath)) {
                 return chain.filter(exchange);
             }
         }
 
-        // 2. 获取 Authorization Header
-        String token = exchange.getRequest().getHeaders().getFirst("Authorization");
+        // 2. 获取 Token
+        String token = null;
+        String bearerToken = exchange.getRequest().getHeaders().getFirst("Authorization");
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+            token = bearerToken.substring(7);
+        }
 
         // 3. 校验 Token
-        if (StringUtils.hasText(token) && token.startsWith("Bearer ")) {
-            token = token.substring(7);
-            if (jwtTokenProvider.validateToken(token)) {
-                // 4. 解析用户信息
-                String username = jwtTokenProvider.getUsernameFromJWT(token);
+        if (token == null) {
+            log.warn("请求未携带Token: {}", path);
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
+        }
 
-                // 5. 【关键】将用户信息放入 Header 传递给下游微服务
-                // 这样下游服务（如 OrderService）就能知道是谁在操作了
+        try {
+            if (jwtTokenProvider.validateToken(token)) {
+                String username = jwtTokenProvider.getUsernameFromJWT(token);
+                log.info("Token校验通过，用户: {}", username);
+
+                // 4. 传递用户信息到下游
                 ServerHttpRequest request = exchange.getRequest().mutate()
                         .header("X-User-Name", username)
                         .build();
                 return chain.filter(exchange.mutate().request(request).build());
             }
+        } catch (Exception e) {
+            log.error("Token校验异常", e);
         }
 
-        // 6. 校验失败，返回 401
+        // 5. 校验失败
+        log.warn("Token无效或过期");
         exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
         return exchange.getResponse().setComplete();
     }
 
     @Override
     public int getOrder() {
-        return -1; // 优先级，越小越先执行
+        return -1;
     }
 }

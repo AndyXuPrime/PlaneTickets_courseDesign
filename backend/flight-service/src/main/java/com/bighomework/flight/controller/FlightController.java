@@ -58,13 +58,21 @@ public class FlightController {
     }
 
     /**
-     * 根据航班号精确查询 (RESTful 风格)
+     * 根据航班号精确查询 (供 Feign 调用，返回单个对象)
+     * 注意：这里简化处理，返回列表中的第一个航班。
+     * 实际业务中应该传日期来精确定位。
      */
     @GetMapping("/{flightNumber}")
-    public ResponseEntity<ApiResponse<List<FlightSearchVO>>> getFlightByNumber(
+    public ResponseEntity<ApiResponse<FlightSearchVO>> getFlightByNumber(
             @PathVariable String flightNumber) {
 
         List<FlightSearchVO> flights = flightService.findFlightByNumber(flightNumber);
-        return ResponseEntity.ok(ApiResponse.success(flights));
+
+        if (flights.isEmpty()) {
+            return ResponseEntity.ok(ApiResponse.error("航班不存在"));
+        }
+
+        // 返回第一个匹配的航班
+        return ResponseEntity.ok(ApiResponse.success(flights.get(0)));
     }
 }

@@ -1,5 +1,5 @@
 server:
-  port: 8080 # 网关通常占用 8080 端口，作为统一入口
+  port: 8080
 
 spring:
   application:

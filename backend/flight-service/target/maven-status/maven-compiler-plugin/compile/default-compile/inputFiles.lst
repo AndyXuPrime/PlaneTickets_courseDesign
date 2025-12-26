@@ -1,5 +1,6 @@
 D:\LearnSomeComputerPrograms VSCode\AndyJava\PlaneTickets_courseDesign-main\backend\flight-service\src\main\java\com\bighomework\flight\controller\AirlineController.java
 D:\LearnSomeComputerPrograms VSCode\AndyJava\PlaneTickets_courseDesign-main\backend\flight-service\src\main\java\com\bighomework\flight\service\DynamicPricingStrategyImpl.java
+D:\LearnSomeComputerPrograms VSCode\AndyJava\PlaneTickets_courseDesign-main\backend\flight-service\src\main\java\com\bighomework\flight\config\FlightSecurityConfig.java
 D:\LearnSomeComputerPrograms VSCode\AndyJava\PlaneTickets_courseDesign-main\backend\flight-service\src\main\java\com\bighomework\flight\repository\AirlineRepository.java
 D:\LearnSomeComputerPrograms VSCode\AndyJava\PlaneTickets_courseDesign-main\backend\flight-service\src\main\java\com\bighomework\flight\service\PricingStrategy.java
 D:\LearnSomeComputerPrograms VSCode\AndyJava\PlaneTickets_courseDesign-main\backend\flight-service\src\main\java\com\bighomework\flight\controller\FlightController.java

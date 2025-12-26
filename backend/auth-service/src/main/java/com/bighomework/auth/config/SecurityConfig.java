@@ -50,7 +50,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .anyRequest().authenticated()
-                );// 放行 Auth 服务的登录注册接口
+                );
         // 注意：这里不需要 addFilterBefore(JwtAuthenticationFilter)，因为校验 Token 是网关的事
         // Auth 服务只负责颁发 Token，不负责校验请求里的 Token（除了它自己的管理接口）
 
