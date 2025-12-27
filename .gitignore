@@ -1,19 +1,39 @@
-frontend/node_modules/
-/backend/auth-service/target/auth-service-0.0.1-SNAPSHOT.jar
-/backend/auth-service/target/auth-service-0.0.1-SNAPSHOT.jar.original
-/backend/auth-service/target/classes/com/bighomework/auth/AuthApplication.class
-/backend/auth-service/target/classes/com/bighomework/auth/controller/AuthController.class
-/backend/auth-service/target/classes/com/bighomework/auth/service/AuthService.class
-/backend/auth-service/target/classes/com/bighomework/auth/service/impl/AuthServiceImpl.class
-/backend/auth-service/target/maven-archiver/pom.properties
-/backend/auth-service/target/classes/com/bighomework/auth/config/SecurityConfig.class
-/backend/auth-service/target/classes/com/bighomework/auth/entity/User.class
-/backend/auth-service/target/classes/com/bighomework/auth/service/impl/UserDetailsServiceImpl.class
-/backend/auth-service/target/classes/com/bighomework/auth/repository/UserRepository.class
-/backend/common-module/target/classes/com/bighomework/common/enums/UserStatus.class
-/backend/auth-service/target/
-/backend/common-module/target/
-/backend/flight-service/target/
-/backend/gateway-service/target/
-/backend/order-service/target/
-/backend/target/
+# 忽略所有模块下的 target 目录（包含编译后的 class, jar 等）
+target/
+**/target/
+
+# 忽略编译产生的 class 文件
+*.class
+
+# 忽略所有生成的 jar/war 包
+*.jar
+*.war
+
+# === 2. 前端 (Node/Vue) 忽略规则 ===
+# 忽略依赖库
+node_modules/
+**/node_modules/
+
+# 忽略前端构建产物
+dist/
+
+# 忽略日志文件
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# VS Code
+.vscode/
+
+# Eclipse
+.settings/
+.project
+.classpath
+
+.DS_Store
+Thumbs.db
