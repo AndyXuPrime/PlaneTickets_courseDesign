@@ -19,6 +19,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import com.bighomework.common.enums.UserRole;
+import com.bighomework.common.enums.UserStatus;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -31,24 +35,29 @@ public class AuthController {
     private final AuthService authService;
     private final UserRepository userRepository;
 
+    // ================= 已有跑通接口 (已根据新 Token 逻辑优化) =================
+
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest loginRequest) {
-        // 1. 认证
+        // 1. Spring Security 认证
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
         );
 
-        // 2. 获取用户信息
+        // 2. 从数据库获取完整的用户信息（包含角色和航司代码）
         String phone = authentication.getName();
         User user = userRepository.findByPhone(phone)
-                .orElseThrow(() -> new BusinessException("用户不存在"));
+                .orElseThrow(() -> new BusinessException("登录成功但无法在数据库中找到对应的用户信息"));
 
-        // 3. 生成 Token
-        String token = jwtTokenProvider.generateToken(authentication);
+        // 3. 【核心优化】调用增强版的 generateToken，将角色和航司代码塞进 JWT
+        String token = jwtTokenProvider.generateToken(
+                user.getPhone(),
+                user.getRole().name(),
+                user.getAirlineCode()
+        );
 
-        // 4. 构建响应 (使用提取的方法)
+        // 4. 构建响应
         LoginResponse response = convertToLoginResponse(user, token);
-
         return ResponseEntity.ok(ApiResponse.success(response, "登录成功"));
     }
 
@@ -59,35 +68,56 @@ public class AuthController {
     }
 
     /**
-     * 内部接口：供 Order-Service 远程调用
-     * 根据手机号获取用户信息
+     * 内部接口：供其他服务远程调用获取用户信息
      */
     @GetMapping("/internal/user")
     public ApiResponse<LoginResponse> getUserByPhone(@RequestParam("phone") String phone) {
         User user = userRepository.findByPhone(phone).orElse(null);
+        if (user == null) return ApiResponse.success(null);
+        return ApiResponse.success(convertToLoginResponse(user, null));
+    }
 
-        if (user == null) {
-            // 返回 null data，调用方(OrderService)会处理
-            return ApiResponse.success(null);
+    // ================= 新增管理接口 (支持后台管理) =================
+
+    /**
+     * 【平台管理员专用】获取所有待审核的航司管理员列表
+     */
+    @GetMapping("/admin/pending-list")
+    public ApiResponse<List<User>> getPendingAdmins() {
+        List<User> pendingUsers = userRepository.findAll().stream()
+                .filter(u -> u.getRole() == UserRole.ROLE_AIRLINE_ADMIN && u.getStatus() == UserStatus.PENDING)
+                .collect(Collectors.toList());
+        return ApiResponse.success(pendingUsers);
+    }
+
+    /**
+     * 【平台管理员专用】审核航司管理员
+     */
+    @PutMapping("/admin/audit")
+    public ApiResponse<Void> auditUser(@RequestParam Integer userId, @RequestParam UserStatus status) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException("该申请记录不存在"));
+
+        if (user.getRole() != UserRole.ROLE_AIRLINE_ADMIN) {
+            throw new BusinessException("只能审核航司管理员申请");
         }
 
-        // 构建响应 (Token 传 null 即可，内部调用不需要返回 Token)
-        LoginResponse response = convertToLoginResponse(user, null);
-
-        return ApiResponse.success(response);
+        user.setStatus(status);
+        userRepository.save(user);
+        log.info("管理员审核操作：用户ID={}, 结果={}", userId, status);
+        return ApiResponse.success(null, "审核操作成功");
     }
 
     // --- 私有辅助方法 ---
-
     private LoginResponse convertToLoginResponse(User user, String token) {
         return LoginResponse.builder()
                 .token(token)
                 .id(user.getUserId())
-                .username(user.getPhone()) // 修正：username 对应登录账号(手机号)
-                .name(user.getName())      // name 对应真实姓名
+                .username(user.getPhone())
+                .name(user.getName())
                 .membershipLevel(user.getMembershipLevel())
-                .role(user.getRole())           // 确保 DTO 已包含此字段
-                .airlineCode(user.getAirlineCode()) // 确保 DTO 已包含此字段
+                .role(user.getRole())
+                .airlineCode(user.getAirlineCode())
                 .build();
     }
 }

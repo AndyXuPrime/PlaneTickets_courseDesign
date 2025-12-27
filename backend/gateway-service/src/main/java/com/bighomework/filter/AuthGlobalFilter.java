@@ -13,7 +13,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-@Slf4j // 引入日志
+@Slf4j
 @Component
 public class AuthGlobalFilter implements GlobalFilter, Ordered {
 
@@ -25,7 +25,7 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
             "/api/auth/login",
             "/api/auth/register",
             "/api/flights/search",
-            "/api/flights/all" // 建议把这个也加上
+            "/api/flights/all"
     };
 
     @Override
@@ -47,7 +47,7 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
             token = bearerToken.substring(7);
         }
 
-        // 3. 校验 Token
+        // 3. 校验 Token 是否存在
         if (token == null) {
             log.warn("请求未携带Token: {}", path);
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
@@ -55,28 +55,37 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
         }
 
         try {
+            // 4. 校验 Token 合法性
             if (jwtTokenProvider.validateToken(token)) {
+                // 从 Token 中解析出用户信息
                 String username = jwtTokenProvider.getUsernameFromJWT(token);
-                log.info("Token校验通过，用户: {}", username);
+                // 【新增】解析角色和航司代码
+                String role = jwtTokenProvider.getRoleFromJWT(token);
+                String airlineCode = jwtTokenProvider.getAirlineCodeFromJWT(token);
 
-                // 4. 传递用户信息到下游
+                log.info("Token校验通过，用户: {}, 角色: {}, 航司: {}", username, role, airlineCode);
+
+                // 5. 【关键】将用户信息封装进 Header 传递给下游微服务
                 ServerHttpRequest request = exchange.getRequest().mutate()
                         .header("X-User-Name", username)
+                        .header("X-User-Role", role != null ? role : "")
+                        .header("X-Airline-Code", airlineCode != null ? airlineCode : "")
                         .build();
+
                 return chain.filter(exchange.mutate().request(request).build());
             }
         } catch (Exception e) {
-            log.error("Token校验异常", e);
+            log.error("Token校验异常: {}", e.getMessage());
         }
 
-        // 5. 校验失败
-        log.warn("Token无效或过期");
+        // 6. 校验失败
+        log.warn("Token无效或已过期: {}", path);
         exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
         return exchange.getResponse().setComplete();
     }
 
     @Override
     public int getOrder() {
-        return -1;
+        return -1; // 优先级最高
     }
 }

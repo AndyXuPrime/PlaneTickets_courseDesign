@@ -1,9 +1,11 @@
-package com.bighomework.planeTicketWeb.service;
+package com.bighomework.admin.service;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
-import com.bighomework.planeTicketWeb.dto.stats.GenericStatDTO;
+// 【修改点】指向 common 模块中的正确路径
+import com.bighomework.common.dto.stats.GenericStatDTO;
 
 public interface AdminStatService {
     Map<String, Object> analyzeCustomersByDimension(String dimension);

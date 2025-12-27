@@ -11,7 +11,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
-
+// ... 保留原有 import
+import com.bighomework.flight.entity.Flight;
+import com.bighomework.flight.repository.FlightRepository;
+import com.bighomework.common.enums.UserRole;
+import com.bighomework.common.exception.BusinessException;
 @Slf4j
 @RestController
 @RequestMapping("/api/flights")
@@ -19,60 +23,58 @@ import java.util.List;
 public class FlightController {
 
     private final FlightService flightService;
+    private final FlightRepository flightRepository; // 直接注入 Repository 方便管理端查询
 
-    /**
-     * 搜索航班 (支持按航线或航司)
-     * 例如: GET /api/flights/search?searchType=byRoute&value=PEK-SHA&flightDate=2023-12-01
-     */
+    // ================= 已有跑通接口 (保持不动) =================
+
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<FlightSearchVO>>> searchFlights(
-            @RequestParam String searchType,
-            @RequestParam String value,
+            @RequestParam String searchType, @RequestParam String value,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate flightDate) {
-
-        log.info("收到航班搜索请求: type={}, value={}, date={}", searchType, value, flightDate);
         List<FlightSearchVO> flights = flightService.searchAvailableFlights(searchType, value, flightDate);
         return ResponseEntity.ok(ApiResponse.success(flights));
     }
 
-    /**
-     * 获取某日所有航班 (用于管理员查看或首页展示)
-     */
     @GetMapping("/all")
     public ResponseEntity<ApiResponse<List<FlightSearchVO>>> getAllFlights(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate flightDate) {
-
         List<FlightSearchVO> flights = flightService.findAllAvailableFlights(flightDate);
         return ResponseEntity.ok(ApiResponse.success(flights));
     }
 
-    /**
-     * 根据航班号模糊查询 (用于状态查询或搜索框联想)
-     */
-    @GetMapping("/status")
-    public ResponseEntity<ApiResponse<List<FlightSearchVO>>> getFlightStatus(
-            @RequestParam String flightNumber) {
-
+    @GetMapping("/{flightNumber}")
+    public ResponseEntity<ApiResponse<FlightSearchVO>> getFlightByNumber(@PathVariable String flightNumber) {
         List<FlightSearchVO> flights = flightService.findFlightByNumber(flightNumber);
-        return ResponseEntity.ok(ApiResponse.success(flights));
+        if (flights.isEmpty()) return ResponseEntity.ok(ApiResponse.error("航班不存在"));
+        return ResponseEntity.ok(ApiResponse.success(flights.get(0)));
     }
 
+    // ================= 新增管理接口 (支持数据隔离) =================
+
     /**
-     * 根据航班号精确查询 (供 Feign 调用，返回单个对象)
-     * 注意：这里简化处理，返回列表中的第一个航班。
-     * 实际业务中应该传日期来精确定位。
+     * 【管理后台专用】获取航班列表
+     * 逻辑：平台管理员看全部，航司管理员只能看自己家的
      */
-    @GetMapping("/{flightNumber}")
-    public ResponseEntity<ApiResponse<FlightSearchVO>> getFlightByNumber(
-            @PathVariable String flightNumber) {
+    @GetMapping("/admin/list")
+    public ApiResponse<List<Flight>> getAdminFlights(
+            @RequestHeader("X-User-Role") String role,
+            @RequestHeader(value = "X-Airline-Code", required = false) String airlineCode) {
 
-        List<FlightSearchVO> flights = flightService.findFlightByNumber(flightNumber);
+        log.info("管理端查询航班: role={}, airlineCode={}", role, airlineCode);
 
-        if (flights.isEmpty()) {
-            return ResponseEntity.ok(ApiResponse.error("航班不存在"));
+        if (UserRole.ROLE_PLATFORM_ADMIN.name().equals(role)) {
+            // 1. 平台管理员：查询所有航班
+            return ApiResponse.success(flightRepository.findAll());
         }
 
-        // 返回第一个匹配的航班
-        return ResponseEntity.ok(ApiResponse.success(flights.get(0)));
+        if (UserRole.ROLE_AIRLINE_ADMIN.name().equals(role)) {
+            // 2. 航司管理员：必须有航司代码，且只能查自己的
+            if (airlineCode == null || airlineCode.isEmpty()) {
+                throw new BusinessException("航司管理员缺少所属航司信息");
+            }
+            return ApiResponse.success(flightRepository.findByAirlineAirlineCode(airlineCode));
+        }
+
+        throw new BusinessException("权限不足，无法访问管理列表");
     }
 }
