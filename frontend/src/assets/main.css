@@ -10,6 +10,14 @@
  }
 
  * {
+     touch-action: pan-y;
+ }
+
+ .el-table__body-wrapper {
+     overflow-anchor: none;
+ }
+
+ * {
      margin: 0;
      padding: 0;
      box-sizing: border-box;

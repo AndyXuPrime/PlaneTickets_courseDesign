@@ -1,35 +1,27 @@
 package com.bighomework.flight.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
 import java.util.List;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Data
 @Entity
 @Table(name = "airlines")
+@ToString(exclude = "flights") // 防止 Lombok 打印时死循环
 public class Airline {
-
     @Id
-    @Column(name = "airline_code", nullable = false, columnDefinition = "char(2)")
+    @Column(name = "airline_code", length = 2, columnDefinition = "char(2)")
     private String airlineCode;
 
-    @Column(name = "airline_name", length = 50)
     private String airlineName;
-
-    @Column(name = "country", length = 30)
     private String country;
-
-    @Column(name = "contact_phone", length = 20)
     private String contactPhone;
-
-    @Column(name = "website", length = 100)
     private String website;
-
-    @Column(name = "logo_url") // 新增字段
     private String logoUrl;
 
-    @JsonIgnore
+    @JsonIgnore // 【核心修复】管理端查询航班时，不需要反向查询航司下的所有航班列表
     @OneToMany(mappedBy = "airline", fetch = FetchType.LAZY)
     private List<Flight> flights;
 }

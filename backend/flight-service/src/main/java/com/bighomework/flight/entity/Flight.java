@@ -1,53 +1,41 @@
 package com.bighomework.flight.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
+import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalTime;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import lombok.Data;
 
 @Data
 @Entity
 @Table(name = "flights")
 public class Flight {
-
     @Id
-    @Column(name = "flight_number", length = 6, nullable = false)
+    @Column(name = "flight_number", length = 6)
     private String flightNumber;
 
-    // 多对一关系：多个航班属于一个航空公司
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER) // 改为 EAGER，确保转换 VO 时航司信息已加载
     @JoinColumn(name = "airline_code", referencedColumnName = "airline_code")
+    @JsonIgnoreProperties({"flights", "hibernateLazyInitializer", "handler"})
     private Airline airline;
 
-    @Column(name = "departure_airport", length = 50)
+    // 增加基础字段的非空获取方法，防止 NPE
+    public BigDecimal getBasePrice() {
+        return basePrice == null ? BigDecimal.ZERO : basePrice;
+    }
+    public Short getEconomySeats() {
+        return economySeats == null ? 0 : economySeats;
+    }
+    public Short getBusinessSeats() {
+        return businessSeats == null ? 0 : businessSeats;
+    }
+
     private String departureAirport;
-
-    @Column(name = "arrival_airport", length = 50)
     private String arrivalAirport;
-
-    @Column(name = "departure_time")
     private LocalTime departureTime;
-
-    @Column(name = "arrival_time")
     private LocalTime arrivalTime;
-
-    @Column(name = "aircraft_model", length = 20)
     private String aircraftModel;
-
-    @Column(name = "business_seats")
     private Short businessSeats;
-
-    @Column(name = "economy_seats")
     private Short economySeats;
-
-    @Column(name = "base_price", precision = 10, scale = 2)
     private BigDecimal basePrice;
-
 }

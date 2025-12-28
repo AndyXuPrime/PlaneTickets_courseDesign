@@ -150,7 +150,6 @@ export default {
   },
   methods: {
     async handleSubmitBooking() {
-      
       if (!this.selectedDate) {
         this.$message.error('请选择航班日期！');
         return;
@@ -158,26 +157,26 @@ export default {
 
       this.isSubmitting = true;
       try {
+        // 构建符合 BookingRequest DTO 的对象
         const bookingRequest = {
           flightNumber: this.flight.flightNumber,
           flightDate: this.selectedDate,
-          passengerIds: [this.currentUser.id],
+          // 后端期望的是 passengerIds 列表，这里暂时只传当前用户ID
+          passengerIds: [String(this.currentUser.id)],
+          // 确保枚举值是大写或符合后端定义 (后端是中文枚举 '经济舱'/'商务舱'，前端保持一致即可)
           cabinClass: this.selectedCabinClass,
-        
         };
 
-        console.log(bookingRequest);
         const response = await api.createBooking(bookingRequest);
 
         if (response.code === 200) {
-          this.$message.success('预订成功！您的机票状态为“已支付”。即将跳转到我的订单页面。');
+          this.$message.success('预订成功！');
           setTimeout(() => {
             this.$router.push({ name: 'MyOrders' });
-          }, 2000);
+          }, 1500);
         }
       } catch (error) {
-        const errorMessage = error.response?.data?.message || '预订失败，可能是余票不足，请稍后重试。';
-        this.$message.error(errorMessage);
+        // 错误已由拦截器处理，这里只需停止 loading
       } finally {
         this.isSubmitting = false;
       }

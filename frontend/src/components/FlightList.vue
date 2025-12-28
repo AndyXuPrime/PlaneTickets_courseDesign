@@ -1,52 +1,76 @@
 <template>
-  <div class="flight-list">
-    <div v-if="!flights || flights.length === 0" class="no-flights-placeholder">
-      <p>暂无航班信息</p>
+  <div class="flight-list-container">
+    <!-- 当无数据时显示 -->
+    <div v-if="!flights || flights.length === 0" class="empty-wrapper">
+      <el-empty description="暂无符合条件的航班信息" :image-size="100"></el-empty>
     </div>
-    
-    <div v-else>
-      <div v-for="flight in flights" :key="flight.flightNumber + flight.cabinClassForDisplay" class="flight-item">
-        <!-- 航空公司信息 -->
-        <div class="airline-info">
-          <div class="airline-logo">{{ getAirlineShortName(flight.airlineName) }}</div>
-          <div class="airline-name">{{ flight.airlineName }}</div>
-          <div class="flight-details">{{ flight.flightNumber }}</div>
-        </div>
 
-        <!-- 航线和时间信息 -->
-        <div class="flight-route">
-          <div class="departure">
-            <div class="flight-time">{{ flight.departureTime }}</div>
-            <div class="airport-name">{{ flight.departureAirport }}</div>
+    <!-- 航班列表 -->
+    <div v-else class="list-wrapper">
+      <div v-for="flight in flights" :key="flight.flightNumber + flight.cabinClassForDisplay" class="flight-card">
+
+        <!-- 1. 航空公司信息 -->
+        <div class="section airline-section">
+          <div class="airline-logo">
+            {{ getAirlineShortName(flight.airlineName) }}
           </div>
-          <div class="route-arrow">
-            <i class="el-icon-right"></i>
-          </div>
-          <div class="arrival">
-            <div class="flight-time">{{ flight.arrivalTime }}</div>
-            <div class="airport-name">{{ flight.arrivalAirport }}</div>
+          <div class="airline-detail">
+            <div class="airline-name">{{ flight.airlineName }}</div>
+            <div class="flight-no">{{ flight.flightNumber }}</div>
           </div>
         </div>
 
-        <!-- 价格和舱位信息 -->
-        <div class="price-section">
-          <div class="flight-price">
-            ¥<span>{{ flight.price }}</span>
+        <!-- 2. 航线与时间轴 -->
+        <div class="section route-section">
+          <div class="node departure">
+            <div class="time">{{ flight.departureTime }}</div>
+            <div class="airport">{{ flight.departureAirport }}</div>
           </div>
-          <div class="flight-details">
-            <span class="badge" :class="getCabinClassBadge(flight.cabinClassForDisplay)">
+
+          <div class="route-line">
+            <div class="line-text">直飞</div>
+            <div class="line-main">
+              <i class="el-icon-location-outline start-dot"></i>
+              <div class="dash-line"></div>
+              <i class="fas fa-plane plane-icon"></i>
+            </div>
+          </div>
+
+          <div class="node arrival">
+            <div class="time">{{ flight.arrivalTime }}</div>
+            <div class="airport">{{ flight.arrivalAirport }}</div>
+          </div>
+        </div>
+
+        <!-- 3. 价格与舱位 -->
+        <div class="section price-section">
+          <div class="price-wrapper">
+            <span class="currency">¥</span>
+            <span class="amount">{{ flight.price }}</span>
+            <span class="suffix">起</span>
+          </div>
+          <div class="cabin-info">
+            <el-tag :type="getCabinTagType(flight.cabinClassForDisplay)" size="mini" effect="light">
               {{ flight.cabinClassForDisplay }}
+            </el-tag>
+            <span class="seats" :class="{ 'low-stock': flight.remainingSeats < 5 }">
+              剩 {{ flight.remainingSeats }} 票
             </span>
-            | 剩余: {{ flight.remainingSeats }}
           </div>
         </div>
 
-        <!-- 操作区 -->
-        <div class="action-section">
-          <button class="btn btn-book" @click="bookFlight(flight)" :disabled="flight.remainingSeats === 0">
-            {{ flight.remainingSeats > 0 ? '预订' : '无票' }}
-          </button>
+        <!-- 4. 操作区 -->
+        <div class="section action-section">
+          <el-button
+              type="primary"
+              class="book-button"
+              @click="bookFlight(flight)"
+              :disabled="flight.remainingSeats === 0"
+          >
+            {{ flight.remainingSeats > 0 ? '立即预订' : '已售罄' }}
+          </el-button>
         </div>
+
       </div>
     </div>
   </div>
@@ -63,132 +87,204 @@ export default {
       required: true,
       default: () => []
     },
-    searchDate: { 
+    searchDate: {
       type: String,
       required: true,
     }
   },
   methods: {
-    /**
-     * 【核心】处理预订按钮点击事件
-     * @param {object} flight - 被点击的航班对象
-     */
     bookFlight(flight) {
-      // 1. 检查用户是否登录
       if (!store.isLoggedIn) {
         this.$message.warning('请先登录再进行预订！');
         mutations.setShowLoginModal(true);
         return;
       }
 
-      // 2. 检查必要的日期信息是否存在
       if (!this.searchDate) {
         this.$message.error('缺少航班日期，无法预订。请返回首页重新搜索。');
         return;
       }
 
-      // 3. 用户已登录，执行跳转，并传递完整数据
       this.$router.push({
-        name: 'Booking', // 使用路由名称跳转
+        name: 'Booking',
         query: {
-          // 将完整的 flight 对象转换为 JSON 字符串进行传递
           flight: JSON.stringify(flight),
-          // 将搜索日期也一并传递过去
-          flightDate: this.searchDate
+          date: this.searchDate // 统一使用 date 键名
         }
       });
     },
-    
+
     getAirlineShortName(name) {
       if (!name) return '航司';
-      if (name.includes('国际')) return '国航';
-      if (name.includes('东方')) return '东航';
-      if (name.includes('南方')) return '南航';
-      if (name.includes('海南')) return '海航';
-      if (name.includes('四川')) return '川航';
-      if (name.includes('厦门')) return '厦航';
+      const map = { '国际': '国航', '东方': '东航', '南方': '南航', '海南': '海航', '四川': '川航', '厦门': '厦航' };
+      for (let key in map) {
+        if (name.includes(key)) return map[key];
+      }
       return name.substring(0, 2);
     },
-    
-    getCabinClassBadge(cabinClass) {
-      if (cabinClass === '商务舱') return 'badge-gold';
-      return 'badge-info';
-    },
+
+    getCabinTagType(cabin) {
+      return cabin === '商务舱' ? 'warning' : 'info';
+    }
   }
 };
 </script>
 
 <style scoped>
-/* 样式部分保持不变 */
-.no-flights-placeholder {
-  text-align: center;
-  padding: 50px;
-  color: #888;
+.flight-list-container {
+  padding: 10px 0;
 }
-.flight-item {
-  display: grid; /* 确保你的CSS中有grid布局 */
-  grid-template-columns: 150px 1fr 180px 120px;
-  align-items: center;
-  gap: 20px;
-  padding: 15px;
-  margin-bottom: 15px;
+
+.empty-wrapper {
+  padding: 60px 0;
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  border-left: 4px solid transparent;
-  transition: all 0.3s ease;
+  border-radius: 12px;
 }
-.flight-item:hover {
-  border-left-color: #409EFF;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+
+.flight-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px 30px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #f0f0f0;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  overflow: hidden;
 }
-.airline-info { text-align: center; }
-.airline-logo { 
-  width: 50px; height: 50px;
-  line-height: 50px;
-  margin: 0 auto 8px; 
-  border-radius: 50%;
-  font-size: 16px;
-  background-color: #e3f2fd;
-  color: #409EFF;
+
+.flight-card:hover {
+  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+  transform: translateY(-3px);
+  border-color: #409EFF;
+}
+
+/* 装饰条 */
+.flight-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: transparent;
+  transition: background 0.3s;
+}
+.flight-card:hover::before {
+  background: #409EFF;
+}
+
+/* 航司部分 */
+.airline-section {
+  display: flex;
+  align-items: center;
+  width: 180px;
+}
+.airline-logo {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  color: #1976d2;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-weight: bold;
+  font-size: 15px;
+  margin-right: 15px;
 }
-.airline-name { font-weight: 500; font-size: 14px; }
-.flight-details { font-size: 13px; color: #909399; }
-.flight-route { display: flex; align-items: center; justify-content: center; }
-.departure, .arrival { text-align: center; }
-.flight-time { font-size: 22px; font-weight: 500; color: #303133; }
-.airport-name { font-size: 14px; color: #606266; }
-.route-arrow { font-size: 24px; color: #DCDFE6; margin: 0 20px; }
-.price-section { text-align: right; }
-.price-section .flight-price {
-    color: #F56C6C; 
-    font-size: 18px;
+.airline-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
 }
-.price-section .flight-price span { font-size: 28px; font-weight: bold; }
-.price-section .flight-details { margin-top: 5px; }
-.badge {
-  padding: 3px 8px;
-  border-radius: 10px;
-  color: #fff;
+.flight-no {
+  font-size: 13px;
+  color: #909399;
+  margin-top: 4px;
+}
+
+/* 航线轴部分 */
+.route-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 30px;
+}
+.node .time {
+  font-size: 28px;
+  font-weight: 700;
+  color: #303133;
+  line-height: 1;
+}
+.node .airport {
+  font-size: 14px;
+  color: #606266;
+  margin-top: 8px;
+}
+.departure { text-align: right; }
+.arrival { text-align: left; }
+
+.route-line {
+  flex: 0.5;
+  margin: 0 25px;
+  text-align: center;
+}
+.line-text {
   font-size: 12px;
+  color: #c0c4cc;
+  margin-bottom: 5px;
 }
-.badge-info { background-color: #909399; }
-.badge-gold { background-color: #E6A23C; }
-.action-section { display: flex; align-items: center; justify-content: center; }
-.btn-book {
-  padding: 8px 25px;
-  border: none;
-  background-color: #409EFF;
-  color: white;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s;
+.line-main {
+  display: flex;
+  align-items: center;
+  position: relative;
 }
-.btn-book:hover { background-color: #66b1ff; }
-.btn-book:disabled {
-  background-color: #c0c4cc;
-  cursor: not-allowed;
+.dash-line {
+  flex: 1;
+  height: 2px;
+  background-image: linear-gradient(to right, #dcdfe6 50%, rgba(255, 255, 255, 0) 0%);
+  background-position: bottom;
+  background-size: 8px 2px;
+  background-repeat: repeat-x;
+}
+.plane-icon {
+  color: #409EFF;
+  font-size: 16px;
+  margin-left: 5px;
+}
+
+/* 价格部分 */
+.price-section {
+  width: 160px;
+  text-align: right;
+  padding-right: 30px;
+}
+.price-wrapper {
+  color: #f56c6c;
+  margin-bottom: 8px;
+}
+.currency { font-size: 16px; font-weight: 600; }
+.amount { font-size: 32px; font-weight: 700; margin: 0 2px; }
+.suffix { font-size: 12px; color: #909399; }
+
+.cabin-info {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.seats { font-size: 12px; color: #67c23a; }
+.seats.low-stock { color: #e6a23c; font-weight: 600; }
+
+/* 按钮部分 */
+.book-button {
+  padding: 12px 25px;
+  font-weight: bold;
+  border-radius: 8px;
+  letter-spacing: 1px;
 }
 </style>
