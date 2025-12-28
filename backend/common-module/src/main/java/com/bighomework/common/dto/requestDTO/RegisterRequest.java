@@ -1,6 +1,7 @@
 package com.bighomework.common.dto.requestDTO;
 
 import com.bighomework.common.enums.MembershipLevel;
+import com.bighomework.common.enums.UserRole;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
@@ -26,4 +27,11 @@ public class RegisterRequest {
 
     @NotNull(message = "必须选择一个会员等级")
     private MembershipLevel membershipLevel;
+
+    private UserRole role;
+
+    /**
+     * 申请入驻的航司代码（仅当 role 为 ROLE_AIRLINE_ADMIN 时有效）
+     */
+    private String airlineCode;
 }

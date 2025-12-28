@@ -2,6 +2,7 @@ package com.bighomework.flight.service.impl;
 
 import com.bighomework.common.dto.responseDTO.FlightSearchVO;
 import com.bighomework.common.enums.CabinClass;
+import com.bighomework.common.enums.UserRole;
 import com.bighomework.common.exception.BusinessException;
 import com.bighomework.flight.entity.Flight;
 import com.bighomework.flight.repository.FlightRepository;
@@ -39,7 +40,7 @@ public class FlightServiceImpl implements FlightService {
                 if (parts.length != 2) throw new BusinessException("航线格式错误");
                 flights = flightRepository.findByRoute(parts[0], parts[1]);
             } else {
-                flights = flightRepository.findByAirline_AirlineCode(value);
+                flights = flightRepository.findByAirlineCode(value);
             }
             return flights.stream().map(f -> convertToVO(f, date)).collect(Collectors.toList());
         } catch (Exception e) {
@@ -134,7 +135,26 @@ public class FlightServiceImpl implements FlightService {
     }
 
     @Override
+    @Transactional
+    @CacheEvict(value = "flight_search", allEntries = true) // 修改价格后，必须让所有搜索缓存失效
+    public void updateFlightPrice(String flightNumber, BigDecimal newPrice, String role, String adminAirlineCode) {
+        Flight flight = flightRepository.findById(flightNumber)
+                .orElseThrow(() -> new BusinessException("航班不存在"));
+
+        // 权限校验
+        if (UserRole.ROLE_AIRLINE_ADMIN.name().equals(role)) {
+            if (!flight.getAirline().getAirlineCode().equals(adminAirlineCode)) {
+                throw new BusinessException("无权修改其他航司的票价");
+            }
+        }
+
+        flight.setBasePrice(newPrice);
+        flightRepository.save(flight);
+        log.info("航班 {} 价格已更新为 {}", flightNumber, newPrice);
+    }
+
     @Transactional(readOnly = true)
+    @Override
     public FlightSearchVO findFlightByNumberAndDate(String flightNumber, LocalDate date) {
         Flight f = flightRepository.findById(flightNumber)
                 .orElseThrow(() -> new BusinessException("航班不存在: " + flightNumber));

@@ -55,14 +55,32 @@ export default {
         if (res.code === 200) this.flights = res.data;
       } finally { this.loading = false; }
     },
+    // src/views/admin/FlightManager.vue 中的 methods 部分
+
     editPrice(row) {
-      this.$prompt('请输入新的基础票价', '价格调整 - ' + row.flightNumber, {
-        confirmButtonText: '确定',
+      this.$prompt('请输入新的基础票价 (当前: ¥' + row.basePrice + ')', '价格调整 - ' + row.flightNumber, {
+        confirmButtonText: '确定修改',
         cancelButtonText: '取消',
         inputPattern: /^\d+(\.\d{1,2})?$/,
-        inputErrorMessage: '请输入正确的价格格式'
-      }).then(({ value }) => {
-        this.$message.success('价格已调整为: ' + value + ' (演示功能)');
+        inputErrorMessage: '请输入有效的数字（最多两位小数）'
+      }).then(async ({ value }) => {
+        try {
+          // 1. 调用真实后端接口
+          const res = await api.updateFlightPrice(row.flightNumber, value);
+
+          if (res.code === 200) {
+            this.$message({
+              type: 'success',
+              message: `航班 ${row.flightNumber} 价格已成功调整为 ¥${value}`
+            });
+            // 2. 刷新列表显示最新数据
+            this.fetchFlights();
+          }
+        } catch (error) {
+          // 错误已由拦截器处理，此处无需额外逻辑
+        }
+      }).catch(() => {
+        this.$message({ type: 'info', message: '已取消修改' });
       });
     }
   }

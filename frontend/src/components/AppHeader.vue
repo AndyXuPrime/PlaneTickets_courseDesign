@@ -13,7 +13,7 @@
           <li><router-link to="/" exact-active-class="active">首页</router-link></li>
           <li><router-link to="/flights" active-class="active">航班动态</router-link></li>
           <li v-if="isLoggedIn"><router-link to="/orders" active-class="active">我的订单</router-link></li>
-          <li v-if="isLoggedIn"><router-link to="/profile" active-class="active">会员中心</router-link></li>
+          <li v-if="isLoggedIn"><router-link to="/profile" active-class="active">用户中心</router-link></li>
           <li><router-link to="/service" active-class="active">客户服务</router-link></li>
         </ul>
       </nav>

@@ -2,122 +2,58 @@ import axios from 'axios';
 import { Message } from 'element-ui';
 import { mutations } from '@/store';
 
-// 1. 创建 Axios 实例 (指向 Gateway 端口 8080)
 const apiClient = axios.create({
-    baseURL: 'http://localhost:8080', // 网关地址
+    baseURL: 'http://localhost:8080',
     timeout: 10000,
 });
 
-// 2. 请求拦截器 (自动携带 Token)
-apiClient.interceptors.request.use(
-    config => {
-        const token = localStorage.getItem('authToken');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    error => Promise.reject(error)
-);
+// 请求拦截：携带 Token
+apiClient.interceptors.request.use(config => {
+    const token = localStorage.getItem('authToken');
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
+}, error => Promise.reject(error));
 
-// 3. 响应拦截器 (统一处理错误)
-apiClient.interceptors.response.use(
-    response => {
-        const res = response.data;
-        // 后端统一返回 ApiResponse: { code: 200, message: "...", data: ... }
-        if (res.code !== 200) {
-            Message({
-                message: res.message || '操作失败',
-                type: 'error',
-                duration: 3000
-            });
-            // 如果 Token 失效 (后端通常返回 401)
-            if (res.code === 401) {
-                mutations.clearUser();
-            }
-            return Promise.reject(new Error(res.message || 'Error'));
-        } else {
-            return res;
-        }
-    },
-    error => {
-        console.error('API Error:', error);
-        let msg = '服务器连接失败';
-        if (error.response) {
-            const status = error.response.status;
-            if (status === 401) {
-                msg = '登录已过期，请重新登录';
-                mutations.clearUser();
-            } else if (status === 403) {
-                msg = '您没有权限执行此操作';
-            } else if (error.response.data && error.response.data.message) {
-                msg = error.response.data.message;
-            } else {
-                msg = `请求错误 ${status}`;
-            }
-        }
-        Message.error(msg);
-        return Promise.reject(error);
+// 响应拦截：统一错误处理
+apiClient.interceptors.response.use(response => {
+    const res = response.data;
+    if (res.code !== 200) {
+        Message.error(res.message || '操作失败');
+        if (res.code === 401) mutations.clearUser();
+        return Promise.reject(new Error(res.message));
     }
-);
+    return res;
+}, error => {
+    Message.error(error.response?.data?.message || '服务器连接失败');
+    return Promise.reject(error);
+});
 
 export default {
-    // --- Auth Service ---
-    login(credentials) {
-        return apiClient.post('/api/auth/login', credentials);
-    },
-    register(userData) {
-        return apiClient.post('/api/auth/register', userData);
-    },
+    // --- 认证与用户中心 (Auth Service) ---
+    login: (credentials) => apiClient.post('/api/auth/login', credentials),
+    register: (userData) => apiClient.post('/api/auth/register', userData),
+    updateProfile: (data) => apiClient.put('/api/auth/user/profile', data),
+    updatePassword: (data) => apiClient.put('/api/auth/user/password', data),
+    getPendingAdmins: () => apiClient.get('/api/auth/admin/pending-list'),
+    auditUser: (userId, status) => apiClient.put(`/api/auth/admin/audit?userId=${userId}&status=${status}`),
 
-    // --- Flight Service ---
-    // 搜索航班
-    searchFlights(params) {
-        return apiClient.get('/api/flights/search', { params });
-    },
-    // 获取所有航班 (带日期)
-    getAllFlights(date) {
-        return apiClient.get('/api/flights/all', { params: { flightDate: date } });
-    },
-    // 获取航班动态
-    getFlightStatus(flightNumber) {
-        return apiClient.get('/api/flights/status', { params: { flightNumber } });
-    },
-    // 管理员获取航班列表
-    getAdminFlights() {
-        return apiClient.get('/api/flights/admin/list');
-    },
-    // 获取所有航空公司列表
-    getAllAirlines() {
-        return apiClient.get('/api/airlines');
-    },
-    // 更新航司 Logo
-    updateAirlineLogo(code, logoUrl) {
-        return apiClient.put(`/api/airlines/${code}/logo?logoUrl=${logoUrl}`);
-    },
+    // --- 航班与文件 (Flight Service) ---
+    searchFlights: (params) => apiClient.get('/api/flights/search', { params }),
+    getAllFlights: (date) => apiClient.get('/api/flights/all', { params: { flightDate: date } }),
+    getFlightStatus: (num) => apiClient.get('/api/flights/status', { params: { flightNumber: num } }),
+    getAdminFlights: () => apiClient.get('/api/flights/admin/list'),
+    updateFlightPrice: (num, price) => apiClient.put(`/api/flights/${num}/price?newPrice=${price}`),
+    getAllAirlines: () => apiClient.get('/api/airlines'),
+    updateAirlineLogo: (code, url) => apiClient.put(`/api/airlines/${code}/logo?logoUrl=${url}`),
+    uploadFile: (formData) => apiClient.post('/api/files/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
 
-    // --- Order Service ---
-    createBooking(bookingData) {
-        return apiClient.post('/api/bookings', bookingData);
-    },
-    getMyOrders() {
-        return apiClient.get('/api/bookings/my-tickets');
-    },
-    refundTicket(ticketId) {
-        return apiClient.post(`/api/bookings/tickets/${ticketId}/refund`);
-    },
+    // --- 订单管理 (Order Service) ---
+    createBooking: (data) => apiClient.post('/api/bookings', data),
+    getMyOrders: () => apiClient.get('/api/bookings/my-tickets'),
+    refundTicket: (id) => apiClient.post(`/api/bookings/tickets/${id}/refund`),
 
-    // --- Admin Service & Auth Admin ---
-    // 获取仪表盘统计数据
-    getDashboardStats() {
-        return apiClient.get('/api/admin/dashboard/stats');
-    },
-    // 获取待审核管理员列表 (Auth服务)
-    getPendingAdmins() {
-        return apiClient.get('/api/auth/admin/pending-list');
-    },
-    // 审核用户 (Auth服务)
-    auditUser(userId, status) {
-        return apiClient.put(`/api/auth/admin/audit?userId=${userId}&status=${status}`);
-    }
+    // --- 统计 (Admin Service) ---
+    getDashboardStats: () => apiClient.get('/api/admin/dashboard/stats')
 };

@@ -23,7 +23,7 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
-    @Column(length = 18, name = "id_card")
+    @Column(length = 255, name = "id_card")
     private String idCard;
 
     @Column(length = 20, unique = true)
