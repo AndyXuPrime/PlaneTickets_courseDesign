@@ -7,6 +7,6 @@ import java.util.List;
 
 @Repository
 public interface TicketRepository extends JpaRepository<Ticket, Long> {
-    // 简单查询，不使用 JOIN FETCH，防止跨服务实体关联报错
+
     List<Ticket> findByUserId(Integer userId);
 }

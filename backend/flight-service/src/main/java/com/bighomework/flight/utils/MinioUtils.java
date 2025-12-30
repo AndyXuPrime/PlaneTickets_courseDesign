@@ -3,6 +3,7 @@ package com.bighomework.flight.utils;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.RemoveObjectArgs;
 import io.minio.http.Method;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,17 +22,26 @@ public class MinioUtils {
 
     private final MinioClient minioClient;
 
-    @Value("${minio.bucketName}")
-    private String bucketName;
+    @Value("${minio.endpoint}")
+    private String endpoint;
 
     /**
-     * 上传文件并返回访问URL
+     * 上传文件到指定的桶，并返回访问URL
+     * @param file 文件对象
+     * @param bucketName 目标桶名
      */
-    public String uploadFile(MultipartFile file) {
+    public String uploadFile(MultipartFile file, String bucketName) {
+        if (file == null || file.isEmpty()) {
+            throw new RuntimeException("文件不能为空");
+        }
+
         String originalFilename = file.getOriginalFilename();
-        // 生成唯一文件名，防止覆盖
+        // 生成唯一文件名
         String fileName = UUID.randomUUID().toString().replace("-", "") +
-                originalFilename.substring(originalFilename.lastIndexOf("."));
+                (originalFilename != null && originalFilename.contains(".")
+                        ? originalFilename.substring(originalFilename.lastIndexOf("."))
+                        : ".jpg");
+
         try {
             InputStream inputStream = file.getInputStream();
             minioClient.putObject(
@@ -43,31 +53,56 @@ public class MinioUtils {
                             .build()
             );
 
-            // 这里为了简单，假设Bucket是public的，直接拼接URL
-            // 格式通常是: http://ip:9000/bucketName/fileName
-            // 实际上生产环境可能需要获取预签名URL或者配置Nginx
-            // 这里我们简单返回文件名，前端配合 endpoint 拼接，或者直接返回预签名URL
-            return getPresignedObjectUrl(fileName);
+            log.info("文件成功上传至桶 [{}]: {}", bucketName, fileName);
+
+            // 返回永久有效的公开访问URL (前提是已执行 mc anonymous set download)
+            return String.format("%s/%s/%s", endpoint, bucketName, fileName);
 
         } catch (Exception e) {
-            log.error("MinIO上传失败", e);
-            throw new RuntimeException("图片上传失败");
+            log.error("MinIO上传失败, 桶: {}, 错误: {}", bucketName, e.getMessage());
+            throw new RuntimeException("文件上传失败");
         }
     }
 
-    // 获取一个有效期的访问链接
-    public String getPresignedObjectUrl(String objectName) {
+    /**
+     * 从指定桶中删除文件
+     * @param fileUrl 文件的完整URL
+     * @param bucketName 目标桶名
+     */
+    public void deleteFile(String fileUrl, String bucketName) {
+        if (fileUrl == null || fileUrl.isEmpty()) return;
+
+        try {
+            // 提取文件名
+            String objectName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(objectName)
+                            .build()
+            );
+            log.info("已从桶 [{}] 中删除文件: {}", bucketName, objectName);
+        } catch (Exception e) {
+            log.error("MinIO文件删除失败: {}", fileUrl, e);
+        }
+    }
+
+    /**
+     * 获取带有效期的访问链接（仅用于私有桶）
+     */
+    public String getPresignedObjectUrl(String objectName, String bucketName) {
         try {
             return minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .method(Method.GET)
                             .bucket(bucketName)
                             .object(objectName)
-                            .expiry(7, TimeUnit.DAYS) // 7天有效
+                            .expiry(7, TimeUnit.DAYS)
                             .build()
             );
         } catch (Exception e) {
-            log.error("获取图片URL失败", e);
+            log.error("获取预签名URL失败", e);
             return "";
         }
     }

@@ -10,10 +10,8 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -44,16 +42,29 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                        // =========================================================
+                        // 1. 【最高优先级】放行内部接口 (供 Order/Flight 服务 Feign 调用)
+                        //    必须放在最前面，确保服务间调用畅通无阻
+                        // =========================================================
+                        .requestMatchers("/api/auth/internal/**").permitAll()
+
+                        // 2. 放行登录注册 (无需 Token)
+                        .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+
+                        // 3. 【业务接口放行】
+                        //    因为 Gateway 已经校验过 Token 并透传了用户信息 (X-User-Name)
+                        //    Auth 服务本身不再重复校验 Token，直接放行，依靠 Controller 层读取 Header
+                        .requestMatchers(
+                                "/api/auth/family/**",  // 常用乘机人
+                                "/api/auth/user/**",    // 用户资料修改
+                                "/api/auth/admin/**"    // 管理员审核
+                        ).permitAll()
+
+                        // 4. 兜底策略 (保持 authenticated 以防万一有漏网之鱼)
                         .anyRequest().authenticated()
                 );
-        // 注意：这里不需要 addFilterBefore(JwtAuthenticationFilter)，因为校验 Token 是网关的事
-        // Auth 服务只负责颁发 Token，不负责校验请求里的 Token（除了它自己的管理接口）
-
         return http.build();
     }
 }

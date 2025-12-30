@@ -45,6 +45,8 @@ export default {
     updateFlightPrice: (num, price) => apiClient.put(`/api/flights/${num}/price?newPrice=${price}`),
     getAllAirlines: () => apiClient.get('/api/airlines'),
     updateAirlineLogo: (code, url) => apiClient.put(`/api/airlines/${code}/logo?logoUrl=${url}`),
+    // 添加发布航班接口
+    createFlight: (data) => apiClient.post('/api/flights', data),
     uploadFile: (formData) => apiClient.post('/api/files/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
     }),
@@ -55,5 +57,11 @@ export default {
     refundTicket: (id) => apiClient.post(`/api/bookings/tickets/${id}/refund`),
 
     // --- 统计 (Admin Service) ---
-    getDashboardStats: () => apiClient.get('/api/admin/dashboard/stats')
+    getDashboardStats: () => apiClient.get('/api/admin/dashboard/stats'),
+
+    // 在 export default 中增加
+    getFamily: () => apiClient.get('/api/auth/family'),
+    addFamily: (data) => apiClient.post('/api/auth/family', data),
+    deleteFamily: (id) => apiClient.delete(`/api/auth/family/${id}`),
+
 };

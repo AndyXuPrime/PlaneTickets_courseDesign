@@ -1,6 +1,7 @@
 package com.bighomework.flight.controller;
 
 import com.bighomework.common.dto.responseDTO.FlightSearchVO;
+import com.bighomework.common.dto.requestDTO.FlightRequest;
 import com.bighomework.common.enums.UserRole;
 import com.bighomework.common.util.ApiResponse;
 import com.bighomework.flight.entity.Flight;
@@ -99,4 +100,27 @@ public class FlightController {
         return ApiResponse.success(null, "价格修改成功");
     }
 
+    @PostMapping
+    public ApiResponse<Void> createFlight(
+            @RequestBody FlightRequest request,
+            @RequestHeader("X-User-Role") String role,
+            @RequestHeader(value = "X-Airline-Code", required = false) String adminAirlineCode) {
+
+        // 1. 权限逻辑处理
+        if ("ROLE_AIRLINE_ADMIN".equals(role)) {
+            // 如果是航司管理员，强制使用他所属的航司代码，防止越权发布
+            request.setAirlineCode(adminAirlineCode);
+        } else if (!"ROLE_PLATFORM_ADMIN".equals(role)) {
+            return ApiResponse.error(403, "无权发布航班");
+        }
+
+        // 2. 调用 Service 保存
+        flightService.saveFlight(request);
+        return ApiResponse.success(null, "航班发布成功");
+    }
+    @GetMapping("/{flightNumber}")
+    public ApiResponse<FlightSearchVO> getFlightByNumber(@PathVariable String flightNumber) {
+        FlightSearchVO flight = flightService.findFlightByNumberAndDate(flightNumber, LocalDate.now());
+        return ApiResponse.success(flight);
+    }
 }

@@ -33,7 +33,7 @@
         <el-table-column label="操作" width="150" align="center">
           <template slot-scope="scope">
             <el-upload
-                action="http://localhost:8080/api/files/upload"
+                action="http://localhost:8080/api/files/upload?bizType=airline"
                 :show-file-list="false"
                 :on-success="(res) => handleLogoSuccess(res, scope.row)"
                 :headers="uploadHeaders">

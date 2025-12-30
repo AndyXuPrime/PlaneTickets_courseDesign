@@ -4,7 +4,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.bighomework.common.dto.requestDTO.FlightRequest;
 import com.bighomework.common.dto.responseDTO.FlightSearchVO;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.transaction.annotation.Transactional;
 
 public interface FlightService {
@@ -14,4 +16,9 @@ public interface FlightService {
     void updateFlightPrice(String flightNumber, BigDecimal newPrice, String role, String adminAirlineCode);
     @Transactional(readOnly = true)
     FlightSearchVO findFlightByNumberAndDate(String flightNumber, LocalDate date);
+
+    @CacheEvict(value = "flight_search", allEntries = true)
+    void clearFlightCache();
+
+    void saveFlight(FlightRequest request);
 }

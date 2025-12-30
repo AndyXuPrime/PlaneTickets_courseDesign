@@ -1,217 +1,264 @@
 <template>
-  <div class="profile-page" v-if="user">
-    <!-- 1. 特色服务展示区 (移到顶部) -->
-    <div class="features-grid">
-      <div class="feature-card" v-for="feature in features" :key="feature.title">
-        <img :src="feature.image" :alt="feature.title" class="feature-image" @error="onImageError">
-        <h3 class="feature-title">{{ feature.title }}</h3>
-      </div>
-    </div>
+  <div class="user-center-page">
+    <el-card class="main-layout-card" :body-style="{ padding: '0px' }">
+      <el-container style="min-height: 650px;">
 
-    <!-- 2. 信息折叠面板 -->
-    <div class="info-accordion">
-      <el-collapse v-model="activeAccordion" accordion>
-        <el-collapse-item name="1" title="清风航空会员卡 电子卡和实体卡">
-          <div class="collapse-content">
-            <p>您的电子会员卡已在App中激活。实体卡片将在您完成首次飞行后的2-4周内寄出。您可以使用任一卡片累积里程和享受权益。</p>
+        <!-- 左侧：功能切换菜单 -->
+        <el-aside width="240px" class="aside-menu">
+          <div class="user-avatar-section">
+            <el-avatar :size="80" :src="user.avatarUrl" icon="el-icon-user-solid"></el-avatar>
+            <div class="user-name-tag">
+              <span class="name">{{ user.name }}</span>
+              <el-tag size="mini" type="warning" effect="dark">{{ user.membershipLevel }}会员</el-tag>
+            </div>
           </div>
-        </el-collapse-item>
-        <el-collapse-item name="2" title="关于会员号/主卡的说明">
-          <div class="collapse-content">
-            <p>您的会员号是您在我们这里的唯一身份标识。如果您同时拥有我们的联名信用卡，系统会自动将您的会员账户设置为主卡，所有消费累积的里程将统一计入此账户。</p>
-          </div>
-        </el-collapse-item>
-        <el-collapse-item name="3" title="如果您居住在中国大陆">
-          <div class="collapse-content">
-            <p>我们为居住在中国大陆的会员提供了本地化的客户服务和专属优惠活动。请确保您在个人资料中填写的地址是最新且准确的。</p>
-          </div>
-        </el-collapse-item>
-      </el-collapse>
-    </div>
 
-    <!-- 3. 帮助与支持区 -->
-    <div class="help-section">
-      <h3>您需要帮助吗？</h3>
-      <button class="btn-consult" @click="goToHelpCenter">咨询</button>
-    </div>
+          <el-menu :default-active="activeTab" @select="activeTab = $event" class="side-menu">
+            <el-menu-item index="info">
+              <i class="el-icon-edit-outline"></i><span>修改个人资料</span>
+            </el-menu-item>
+            <el-menu-item index="family">
+              <i class="el-icon-user"></i><span>常用乘机人</span>
+            </el-menu-item>
+            <el-menu-item index="security">
+              <i class="el-icon-lock"></i><span>安全中心 (改密)</span>
+            </el-menu-item>
+            <el-menu-item index="benefits">
+              <i class="el-icon-medal"></i><span>会员权益 & 说明</span>
+            </el-menu-item>
+          </el-menu>
+        </el-aside>
+
+        <!-- 右侧：功能面板 -->
+        <el-main class="main-content-pane">
+
+          <!-- 面板 A: 个人资料修改 -->
+          <div v-if="activeTab === 'info'">
+            <h2 class="section-title">个人资料修改</h2>
+            <el-form label-position="top" class="form-container">
+              <el-form-item label="用户头像 (点击图片更换)">
+                <el-upload
+                    class="avatar-uploader"
+                    action="http://localhost:8080/api/files/upload?bizType=avatars"
+                    :headers="uploadHeaders"
+                    :show-file-list="false"
+                    :on-success="handleAvatarSuccess">
+                  <img v-if="user.avatarUrl" :src="user.avatarUrl" class="avatar-img">
+                  <i v-else class="el-icon-plus avatar-icon"></i>
+                </el-upload>
+              </el-form-item>
+
+              <el-form-item label="电子邮箱">
+                <el-input v-model="user.email" placeholder="example@mail.com"></el-input>
+              </el-form-item>
+
+              <el-form-item label="手机号码 (不可修改)">
+                <el-input :value="user.username" disabled></el-input>
+              </el-form-item>
+
+              <el-button type="primary" class="save-btn" @click="submitProfile" :loading="loading">保存资料修改</el-button>
+            </el-form>
+          </div>
+
+          <!-- 面板 B: 常用乘机人管理 (关键新增) -->
+          <div v-if="activeTab === 'family'">
+            <div class="pane-header">
+              <h2 class="section-title">常用乘机人管理</h2>
+              <el-button type="primary" size="small" icon="el-icon-plus" @click="showFamilyDialog = true">新增乘机人</el-button>
+            </div>
+
+            <el-table :data="familyList" border stripe style="width: 100%; margin-top: 20px" v-loading="loading">
+              <el-table-column prop="name" label="姓名" width="120"></el-table-column>
+              <el-table-column prop="phone" label="手机号" width="150"></el-table-column>
+              <el-table-column prop="idCard" label="身份证号 (加密存储)" min-width="200"></el-table-column>
+              <el-table-column label="操作" width="100" align="center">
+                <template slot-scope="scope">
+                  <el-button type="text" style="color: #f56c6c" @click="handleDeleteFamily(scope.row.memberId)">删除</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+
+            <!-- 新增乘机人弹窗 -->
+            <el-dialog title="添加乘机人" :visible.sync="showFamilyDialog" width="400px" append-to-body>
+              <el-form :model="familyForm" label-position="top">
+                <el-form-item label="真实姓名">
+                  <el-input v-model="familyForm.name" placeholder="请输入姓名"></el-input>
+                </el-form-item>
+                <el-form-item label="手机号码">
+                  <el-input v-model="familyForm.phone" placeholder="选填"></el-input>
+                </el-form-item>
+                <el-form-item label="身份证号">
+                  <el-input v-model="familyForm.idCard" placeholder="请输入18位身份证号"></el-input>
+                </el-form-item>
+              </el-form>
+              <div slot="footer">
+                <el-button @click="showFamilyDialog = false">取消</el-button>
+                <el-button type="primary" @click="submitAddFamily" :loading="loading">确认添加</el-button>
+              </div>
+            </el-dialog>
+          </div>
+
+          <!-- 面板 C: 安全中心 (修改密码) -->
+          <div v-if="activeTab === 'security'">
+            <h2 class="section-title">修改登录密码</h2>
+            <el-form :model="pwdForm" label-position="top" class="form-container">
+              <el-form-item label="原密码">
+                <el-input v-model="pwdForm.oldPassword" type="password" show-password></el-input>
+              </el-form-item>
+              <el-form-item label="新密码">
+                <el-input v-model="pwdForm.newPassword" type="password" show-password></el-input>
+              </el-form-item>
+              <el-form-item label="确认新密码">
+                <el-input v-model="pwdForm.confirmPassword" type="password" show-password></el-input>
+              </el-form-item>
+              <el-button type="danger" class="save-btn" @click="submitPassword" :loading="loading">确认重置密码</el-button>
+            </el-form>
+          </div>
+
+          <!-- 面板 D: 会员权益 -->
+          <div v-if="activeTab === 'benefits'">
+            <h2 class="section-title">我的会员服务</h2>
+            <div class="old-features-grid">
+              <div class="mini-card">以家庭为单位累积里程</div>
+              <div class="mini-card">清风航空高级会员服务</div>
+              <div class="mini-card">各地区的会员优惠</div>
+            </div>
+            <el-collapse accordion style="margin-top: 30px;">
+              <el-collapse-item title="清风航空会员卡 说明" name="1">
+                <div>您的电子会员卡已在App中激活。实体卡片将在您完成首次飞行后的2-4周内寄出。</div>
+              </el-collapse-item>
+              <el-collapse-item title="关于会员号/主卡的说明" name="2">
+                <div>您的会员号是您在我们这里的唯一身份标识。</div>
+              </el-collapse-item>
+            </el-collapse>
+          </div>
+
+        </el-main>
+      </el-container>
+    </el-card>
   </div>
 </template>
 
 <script>
-import { store } from '../store';
+import api from '@/api';
+import { store, mutations } from '@/store';
 
 export default {
-  name: 'ProfileView',
   data() {
     return {
-      features: [
-        { title: '以家庭为单位累积里程', image: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=500&q=80' },
-        { title: '清风航空高级会员服务', image: 'https://images.unsplash.com/photo-1582693432722-2d96013b1379?w=500&q=80' },
-        { title: '使用联名信用卡获取奖励', image: 'https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?w=500&q=80' },
-        { title: '各地区的会员优惠', image: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=500&q=80' },
-      ],
-      activeAccordion: '1',
+      activeTab: 'info',
+      loading: false,
+      user: { ...store.user },
+      pwdForm: { oldPassword: '', newPassword: '', confirmPassword: '' },
+      // 家人管理相关数据
+      familyList: [],
+      showFamilyDialog: false,
+      familyForm: { name: '', phone: '', idCard: '' },
+      uploadHeaders: { Authorization: 'Bearer ' + localStorage.getItem('authToken') }
     };
   },
-  computed: {
-    user() {
-      return store.user;
-    }
-  },
-  created() {
-    if (!store.isLoggedIn) {
-      this.$message.error('请先登录以访问会员中心！');
-      this.$router.push('/');
+  watch: {
+    // 监听标签页切换，如果是切换到家人管理，则获取数据
+    activeTab(newTab) {
+      if (newTab === 'family') {
+        this.fetchFamily();
+      }
     }
   },
   methods: {
-    onImageError(event) {
-      const imgElement = event.target;
-      const placeholder = document.createElement('div');
-      placeholder.className = 'image-placeholder';
-      const icon = document.createElement('i');
-      icon.className = 'fas fa-image';
-      placeholder.appendChild(icon);
-      imgElement.parentNode.replaceChild(placeholder, imgElement);
+    // --- 个人资料逻辑 ---
+    handleAvatarSuccess(res) {
+      if (res.code === 200) {
+        this.user.avatarUrl = res.data;
+        this.$message.success('头像上传成功，请保存资料以生效');
+      }
     },
-    goToHelpCenter() {
-      // 点击“咨询”按钮，跳转到客户服务页面
-      this.$router.push('/service');
+    async submitProfile() {
+      this.loading = true;
+      try {
+        const res = await api.updateProfile({ email: this.user.email, avatarUrl: this.user.avatarUrl });
+        if (res.code === 200) {
+          mutations.setUser({ ...store.user, ...this.user }, localStorage.getItem('authToken'));
+          this.$message.success('资料已同步');
+        }
+      } finally { this.loading = false; }
+    },
+
+    // --- 家人管理逻辑 ---
+    async fetchFamily() {
+      this.loading = true;
+      try {
+        const res = await api.getFamily();
+        if (res.code === 200) this.familyList = res.data;
+      } finally { this.loading = false; }
+    },
+    async submitAddFamily() {
+      if (!this.familyForm.name || !this.familyForm.idCard) {
+        return this.$message.warning('请填写姓名和身份证号');
+      }
+      this.loading = true;
+      try {
+        const res = await api.addFamily(this.familyForm);
+        if (res.code === 200) {
+          this.$message.success('添加成功');
+          this.showFamilyDialog = false;
+          this.familyForm = { name: '', phone: '', idCard: '' };
+          this.fetchFamily();
+        }
+      } finally { this.loading = false; }
+    },
+    async handleDeleteFamily(id) {
+      try {
+        await this.$confirm('确定要删除该乘机人吗？', '提示', { type: 'warning' });
+        const res = await api.deleteFamily(id);
+        if (res.code === 200) {
+          this.$message.success('已删除');
+          this.fetchFamily();
+        }
+      } catch (e) { /* 取消删除 */ }
+    },
+
+    // --- 密码逻辑 ---
+    async submitPassword() {
+      if (this.pwdForm.newPassword !== this.pwdForm.confirmPassword) {
+        return this.$message.error('两次输入的新密码不匹配');
+      }
+      this.loading = true;
+      try {
+        const res = await api.updatePassword(this.pwdForm);
+        if (res.code === 200) {
+          this.$message.success('密码修改成功，请重新登录');
+          mutations.clearUser();
+          this.$router.push('/admin-login');
+        }
+      } finally { this.loading = false; }
     }
   }
 };
 </script>
 
 <style scoped>
-:root {
-  --theme-primary: #0033a0; 
-  --theme-secondary: #00a0e9; 
-  --theme-accent: #e87722; 
-  --theme-bg-light: #f5f7fa; 
-  --theme-text-dark: #2c3e50; 
-  --theme-text-light: #5a6a7a; 
-}
+.user-center-page { padding: 50px 20px; background-color: #f0f2f5; min-height: 90vh; }
+.main-layout-card { max-width: 1100px; margin: 0 auto; border-radius: 15px; }
+.aside-menu { background-color: #fff; border-right: 1px solid #f0f0f0; }
+.user-avatar-section { padding: 40px 20px; text-align: center; border-bottom: 1px solid #f5f7fa; }
+.user-name-tag { margin-top: 15px; }
+.user-name-tag .name { display: block; font-weight: bold; font-size: 18px; margin-bottom: 5px; }
+.side-menu { border-right: none; margin-top: 10px; }
 
-.profile-page {
-  max-width: 1100px;
-  margin: 20px auto;
-  padding: 20px;
-}
+.main-content-pane { padding: 40px 60px; background-color: #fff; }
+.pane-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.section-title { font-size: 22px; color: #303133; border-left: 4px solid #409EFF; padding-left: 15px; margin: 0; }
+.form-container { max-width: 500px; margin-top: 20px; }
 
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 20px;
-  margin-bottom: 50px; 
-}
-.feature-card {
-  background-color: var(--theme-bg-light);
-  border-radius: 12px;
-  overflow: hidden;
-  text-align: center;
-  transition: all 0.3s ease;
-  border: 1px solid #e0e0e0;
-}
-.feature-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-}
-.feature-image {
-  width: 100%;
-  height: 160px;
-  object-fit: cover;
-  display: block;
-}
-.feature-title {
-  font-size: 1rem;
-  font-weight: 600;
-  padding: 20px 15px;
-  margin: 0;
-  color: var(--theme-text-dark);
-}
+/* 头像上传美化 */
+.avatar-uploader { border: 1px dashed #d9d9d9; border-radius: 50%; cursor: pointer; width: 100px; height: 100px; overflow: hidden; transition: 0.3s; }
+.avatar-uploader:hover { border-color: #409EFF; }
+.avatar-icon { font-size: 28px; color: #8c939d; line-height: 100px; text-align: center; width: 100px; }
+.avatar-img { width: 100px; height: 100px; object-fit: cover; }
+.upload-tip { font-size: 12px; color: #999; margin-top: 10px; }
+.save-btn { margin-top: 20px; width: 200px; }
 
-
-::v-deep .image-placeholder {
-  width: 100%;
-  height: 160px;
-  background-color: #e9ecef;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #adb5bd;
-  font-size: 48px;
-}
-
-
-.info-accordion {
-  margin-bottom: 50px;
-}
-
-::v-deep .el-collapse {
-  border-top: none;
-  border-bottom: none;
-}
-::v-deep .el-collapse-item {
-  margin-bottom: 12px;
-}
-::v-deep .el-collapse-item__header {
-  background-color: var(--theme-bg-light);
-  padding: 15px 25px; 
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--theme-text-dark);
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-  transition: background-color 0.3s;
-}
-::v-deep .el-collapse-item__header:hover {
-  background-color: #e9eff5;
-}
-::v-deep .el-collapse-item__header.is-active {
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-  border-bottom-color: transparent;
-}
-::v-deep .el-collapse-item__wrap {
-  border-bottom: none;
-  border-left: 1px solid #e0e0e0;
-  border-right: 1px solid #e0e0e0;
-  border-bottom: 1px solid #e0e0e0;
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
-}
-.collapse-content {
-  padding: 20px 25px;
-  font-size: 0.95rem;
-  line-height: 1.7;
-  color: var(--theme-text-light);
-}
-
-
-.help-section {
-  text-align: left;
-  padding: 0; 
-  background-color: transparent;
-}
-.help-section h3 {
-  font-size: 1.5rem; 
-  margin-bottom: 20px;
-  color: var(--theme-text-dark);
-  font-weight: 600;
-}
-.btn-consult {
-  background-color: var(--theme-accent, #e87722); 
-  color: white;
-  border: none;
-  padding: 12px 40px;
-  font-size: 1rem;
-  font-weight: bold;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-.btn-consult:hover {
-  background-color: #c45d00;
-  box-shadow: 0 4px 12px rgba(232, 119, 34, 0.3);
-}
+.old-features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
+.mini-card { padding: 20px; background: #f8f9fb; border-radius: 8px; text-align: center; font-size: 14px; color: #666; }
 </style>

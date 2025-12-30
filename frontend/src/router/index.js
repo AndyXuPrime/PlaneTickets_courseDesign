@@ -14,7 +14,7 @@ const routes = [
   /* --- 用户受限页面 (需登录) --- */
   { path: '/booking', name: 'Booking', component: () => import('../views/BookingView.vue'), meta: { title: '订单确认', requiresAuth: true } },
   { path: '/orders', name: 'MyOrders', component: () => import('../views/MyTicketsView.vue'), meta: { title: '我的行程', requiresAuth: true } },
-  { path: '/profile', name: 'Profile', component: () => import('../views/ProfileView.vue'), meta: { title: '会员中心', requiresAuth: true } },
+  { path: '/profile', name: 'Profile', component: () => import('../views/ProfileView.vue'), meta: { title: '用户中心', requiresAuth: true } },
 
   /* --- 管理员后台页面 --- */
   {
@@ -38,7 +38,7 @@ const routes = [
   {
     path: '/profile',
     name: 'UserCenter',
-    component: () => import('../views/UserCenterView.vue'), // 建议重命名文件
+    component: () => import('../views/ProfileView.vue'),
     meta: { title: '用户中心', requiresAuth: true }
   },
   /* --- 异常页面 --- */

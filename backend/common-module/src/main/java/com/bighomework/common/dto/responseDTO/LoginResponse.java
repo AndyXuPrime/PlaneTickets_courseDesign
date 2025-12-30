@@ -50,4 +50,5 @@ public class LoginResponse implements Serializable {
      * 所属航司代码 (仅当 role 为 ROLE_AIRLINE_ADMIN 时有值，否则为 null)
      */
     private String airlineCode;
+    private String avatarUrl;
 }

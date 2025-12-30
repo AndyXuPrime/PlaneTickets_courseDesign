@@ -17,11 +17,17 @@ public class FileController {
     private final MinioUtils minioUtils;
 
     @PostMapping("/upload")
-    public ApiResponse<String> upload(@RequestParam("file") MultipartFile file) {
-        if (file.isEmpty()) {
-            return ApiResponse.error("文件不能为空");
+    public ApiResponse<String> upload(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "bizType", defaultValue = "avatars") String bizType) {
+
+        // 动态决定桶名
+        String targetBucket = "avatars"; // 默认用户头像
+        if ("airline".equals(bizType)) {
+            targetBucket = "airline-logos"; // 航司Logo
         }
-        String url = minioUtils.uploadFile(file);
+
+        String url = minioUtils.uploadFile(file, targetBucket);
         return ApiResponse.success(url, "上传成功");
     }
 }

@@ -1,51 +1,61 @@
 <template>
-  <div class="order-card" :class="`status-${order.status.toLowerCase()}`">
-    <!-- 卡片头部：订单号、状态、创建时间 -->
+  <div class="order-card">
+    <!-- 1. 卡片头部：显示航班号和日期 (LogicalOrderVO 没有统一状态，状态在 Ticket 上) -->
     <div class="order-card-header">
-      <span class="order-number">订单号: {{ order.orderNumber }}</span>
-      <span class="order-status badge" :class="getStatusBadgeClass(order.status)">
-        {{ formatOrderStatus(order.status) }}
+      <span class="order-number">
+        <i class="el-icon-s-ticket"></i> 订单组: {{ order.logicalOrderId }}
       </span>
-      <span class="create-time">{{ formatDateTime(order.createTime) }}</span>
+      <!-- 显示航班号 -->
+      <span class="flight-no">{{ order.flightNumber }}</span>
     </div>
 
-    <!-- 卡片主体：航班信息 -->
+    <!-- 2. 卡片主体：机票列表 -->
     <div class="order-card-body">
+      <!-- 遍历订单内的每一张机票 -->
       <div v-for="ticket in order.tickets" :key="ticket.ticketId" class="ticket-info">
+
+        <!-- 左侧：乘机人与舱位 -->
         <div class="passenger-info">
-          <i class="fas fa-user"></i>
-          <span>{{ ticket.passengerName }}</span>
+          <div class="name"><i class="fas fa-user"></i> {{ ticket.passengerName }}</div>
+          <div class="cabin-tag">{{ ticket.cabinClass }}</div>
         </div>
+
+        <!-- 中间：航线与日期 -->
         <div class="flight-info">
-          <!-- 这里需要从 ticket 对象中获取航班信息，但 VO 中没有，我们先用订单号代替 -->
-          <span class="flight-route">{{ getRouteFromOrder(order) }}</span>
-          <span class="flight-details">航班日期: {{ getFlightDateFromOrder(order) }}</span>
+          <div class="flight-route">
+            {{ order.departureAirport }} <i class="el-icon-right"></i> {{ order.arrivalAirport }}
+          </div>
+          <div class="flight-date">{{ order.flightDate }}</div>
         </div>
-        <div class="price-info">
-          <span class="final-price">¥{{ ticket.finalPrice.toFixed(2) }}</span>
+
+        <!-- 右侧：价格、状态与操作 -->
+        <div class="action-info">
+          <div class="price">¥{{ ticket.finalPrice.toFixed(2) }}</div>
+
+          <!-- 状态显示 (适配后端中文枚举) -->
+          <el-tag size="small" :type="getStatusType(ticket.status)" class="status-tag">
+            {{ ticket.status }}
+          </el-tag>
+
+          <el-button
+              v-if="ticket.status === '已支付'"
+              type="text"
+              class="refund-btn"
+              @click="handleRefund(ticket.ticketId)"
+          >
+            退票
+          </el-button>
         </div>
       </div>
     </div>
 
-    <!-- 卡片脚部：总金额和操作按钮 -->
+    <!-- 3. 卡片脚部：总金额 -->
     <div class="order-card-footer">
       <div class="total-amount">
         <span>订单总额: </span>
         <span class="amount-value">¥{{ order.totalAmount.toFixed(2) }}</span>
       </div>
-      <div class="actions">
-        <el-button type="primary" plain size="small" @click="viewDetails">查看详情</el-button>
-        <!-- 只有在特定状态下才显示“取消订单”按钮 -->
-        <el-button 
-          v-if="canBeCancelled(order.status)" 
-          type="danger" 
-          plain 
-          size="small" 
-          @click="$emit('cancel', order.orderId)"
-        >
-          取消订单
-        </el-button>
-      </div>
+      <!-- 这里的查看详情可以保留，或者去掉，看你需求 -->
     </div>
   </div>
 </template>
@@ -60,76 +70,86 @@ export default {
     }
   },
   methods: {
-    // 格式化订单状态显示
-    formatOrderStatus(status) {
-      const statusMap = {
-        PENDING_PAYMENT: '待支付',
-        PAID: '已支付',
-        CANCELLED: '已取消',
-        COMPLETED: '已完成'
+    // 适配后端的中文状态，返回对应的 ElementUI Tag 类型
+    getStatusType(status) {
+      const map = {
+        '已支付': 'success',
+        '已取消': 'info',
+        '已使用': 'warning',
+        '已预订': 'primary'
       };
-      return statusMap[status] || '未知状态';
+      return map[status] || 'info';
     },
-    // 根据状态返回不同的徽章样式
-    getStatusBadgeClass(status) {
-      const classMap = {
-        PENDING_PAYMENT: 'badge-warning',
-        PAID: 'badge-success',
-        CANCELLED: 'badge-danger',
-        COMPLETED: 'badge-info'
-      };
-      return classMap[status] || 'badge-info';
-    },
-    // 格式化日期时间
-    formatDateTime(dateTimeStr) {
-      if (!dateTimeStr) return '';
-      return new Date(dateTimeStr).toLocaleString('zh-CN');
-    },
-    // 判断订单是否可以被取消
-    canBeCancelled(status) {
-      // 根据后端逻辑，只有 PENDING_PAYMENT 和 PAID 状态可以取消
-      return ['PENDING_PAYMENT', 'PAID'].includes(status);
-    },
-    // 跳转到订单详情页
-    viewDetails() {
-      this.$router.push({ name: 'OrderDetail', params: { orderId: this.order.orderId } });
-    },
-    // 从订单的第一个票据中获取航线信息（这是一个变通方法）
-    getRouteFromOrder(order) {
-        if (order.tickets && order.tickets.length > 0) {
-            // 后端OrderDetailVO没有提供航班的起降地，这是一个需要后端改进的点
-            // 我们暂时返回一个占位符
-            return '航线信息待补充';
-        }
-        return '未知航线';
-    },
-    // 从订单的第一个票据中获取航班日期
-    getFlightDateFromOrder(order) {
-        if (order.tickets && order.tickets.length > 0) {
-            // 后端OrderDetailVO.TicketVO没有提供flightDate，这也是一个需要改进的点
-            return '日期未知';
-        }
-        return '日期未知';
+
+    // 处理退票
+    handleRefund(ticketId) {
+      this.$confirm('确定要退订这张机票吗?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        // 向父组件触发事件，传递具体的 ticketId
+        this.$emit('refund-ticket', ticketId);
+      }).catch(() => {});
     }
   }
 }
 </script>
 
 <style scoped>
-.order-card { border: 1px solid #779edd; border-radius: 8px; overflow: hidden; transition: box-shadow 0.3s; }
-.order-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-.order-card-header { display: flex; justify-content: space-between; align-items: center; background-color: #688abe; padding: 10px 15px; font-size: 14px; }
-.order-number { font-weight: 500; }
-.create-time { color: var(--gray); }
-.order-card-body { padding: 15px; }
-.ticket-info { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px dashed #eee; }
+.order-card {
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  margin-bottom: 20px;
+  transition: all 0.3s;
+}
+.order-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+
+/* 头部样式 */
+.order-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f5f7fa;
+  padding: 12px 20px;
+  border-bottom: 1px solid #ebeef5;
+}
+.order-number { font-weight: bold; color: #606266; font-size: 14px; }
+.flight-no { font-weight: 800; color: #409EFF; font-size: 16px; }
+
+/* 主体样式 */
+.order-card-body { padding: 0 20px; }
+.ticket-info {
+  display: flex;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 1px dashed #eee;
+}
 .ticket-info:last-child { border-bottom: none; }
-.passenger-info { flex-basis: 150px; }
-.flight-info { flex-grow: 1; }
-.flight-route { font-weight: bold; }
-.flight-details { font-size: 12px; color: var(--gray); }
-.price-info { text-align: right; font-size: 16px; font-weight: bold; color: var(--danger); }
-.order-card-footer { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-top: 1px solid #e0e0e0; }
-.total-amount .amount-value { font-size: 18px; font-weight: bold; color: var(--danger); }
-.actions .el-button { margin-left: 10px; }
+
+.passenger-info { flex: 1; }
+.passenger-info .name { font-weight: bold; font-size: 15px; color: #303133; }
+.passenger-info .cabin-tag { font-size: 12px; color: #909399; margin-top: 4px; }
+
+.flight-info { flex: 2; text-align: center; }
+.flight-route { font-weight: bold; font-size: 15px; color: #303133; }
+.flight-date { color: #909399; font-size: 13px; margin-top: 4px; }
+
+.action-info { flex: 1; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+.price { font-size: 16px; font-weight: 800; color: #F56C6C; }
+.refund-btn { color: #F56C6C; padding: 0; }
+
+/* 底部样式 */
+.order-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 12px 20px;
+  background: #fcfcfc;
+  border-top: 1px solid #ebeef5;
+}
+.total-amount span { color: #606266; font-size: 14px; }
+.total-amount .amount-value { font-size: 20px; color: #F56C6C; margin-left: 5px; }
 </style>

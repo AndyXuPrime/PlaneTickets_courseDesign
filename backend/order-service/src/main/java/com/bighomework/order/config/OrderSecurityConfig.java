@@ -14,9 +14,7 @@ public class OrderSecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 1. 关闭 CSRF
                 .csrf(AbstractHttpConfigurer::disable)
-                // 2. 所有请求直接放行 (Permit All)
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().permitAll()
                 );
