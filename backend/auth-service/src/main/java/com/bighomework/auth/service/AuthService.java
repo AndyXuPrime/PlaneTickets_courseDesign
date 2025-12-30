@@ -6,6 +6,7 @@ import com.bighomework.common.dto.requestDTO.FamilyMemberRequest;
 import com.bighomework.common.dto.requestDTO.RegisterRequest;
 import com.bighomework.common.dto.requestDTO.UpdatePasswordRequest;
 import com.bighomework.common.dto.requestDTO.UpdateProfileRequest;
+import com.bighomework.common.enums.MembershipLevel;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -25,4 +26,9 @@ public interface AuthService {
 
     @Transactional
     void deleteFamilyMember(Integer memberId, String phone);
+
+    @Transactional
+    void updateMembership(Integer userId, MembershipLevel level);
+
+    void resetPassword(Integer userId);
 }

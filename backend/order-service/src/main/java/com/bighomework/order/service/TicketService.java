@@ -3,6 +3,9 @@ package com.bighomework.order.service;
 import com.bighomework.common.dto.requestDTO.BookingRequest;
 import com.bighomework.common.dto.responseDTO.LogicalOrderVO;
 import com.bighomework.common.dto.responseDTO.TicketVO;
+import com.bighomework.common.enums.TicketStatus;
+import com.bighomework.order.entity.Ticket;
+import com.bighomework.order.entity.TicketStatusLog;
 
 import java.util.List;
 
@@ -29,4 +32,23 @@ public interface TicketService {
      * @return 逻辑订单列表 (按预订时间分组)
      */
     List<LogicalOrderVO> getMyOrders(String username);
+
+    /**
+     * 管理员搜索机票
+     * @param flightNumber 航班号 (可选)
+     * @param status 状态 (可选)
+     */
+    List<Ticket> searchTickets(String flightNumber, TicketStatus status);
+
+    /**
+     * 管理员办理登机 (核销)
+     * @param ticketId 机票ID
+     */
+    void checkInTicket(Long ticketId);
+
+    /**
+     * 获取机票的操作日志
+     * @param ticketId 机票ID
+     */
+    List<TicketStatusLog> getTicketLogs(Long ticketId);
 }

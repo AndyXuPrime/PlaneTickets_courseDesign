@@ -55,7 +55,6 @@ export default {
     createBooking: (data) => apiClient.post('/api/bookings', data),
     getMyOrders: () => apiClient.get('/api/bookings/my-tickets'),
     refundTicket: (id) => apiClient.post(`/api/bookings/tickets/${id}/refund`),
-
     // --- 统计 (Admin Service) ---
     getDashboardStats: () => apiClient.get('/api/admin/dashboard/stats'),
 
@@ -64,4 +63,15 @@ export default {
     addFamily: (data) => apiClient.post('/api/auth/family', data),
     deleteFamily: (id) => apiClient.delete(`/api/auth/family/${id}`),
 
+
+    // === 管理员接口 ===
+    // 用户管理 (注意：这里全部改成了 apiClient)
+    getAllUsers: (phone) => apiClient.get('/api/auth/admin/users', { params: { phone } }),
+    updateUserMembership: (userId, level) => apiClient.put(`/api/auth/admin/users/${userId}/membership`, null, { params: { level } }),
+    resetUserPassword: (userId) => apiClient.put(`/api/auth/admin/users/${userId}/reset-password`),
+
+    // 订单管理 (注意：这里全部改成了 apiClient)
+    getAllTickets: (params) => apiClient.get('/api/bookings/admin/tickets', { params }),
+    checkInTicket: (ticketId) => apiClient.put(`/api/bookings/admin/tickets/${ticketId}/check-in`),
+    getTicketLogs: (ticketId) => apiClient.get(`/api/bookings/admin/tickets/${ticketId}/logs`)
 };

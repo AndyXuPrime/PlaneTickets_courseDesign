@@ -7,6 +7,7 @@ import com.bighomework.auth.service.AuthService;
 import com.bighomework.common.dto.requestDTO.*;
 import com.bighomework.common.dto.responseDTO.LoginResponse;
 import com.bighomework.common.dto.responseDTO.FamilyMemberVO;
+import com.bighomework.common.enums.MembershipLevel;
 import com.bighomework.common.enums.UserRole;
 import com.bighomework.common.enums.UserStatus;
 import com.bighomework.common.exception.BusinessException;
@@ -141,6 +142,35 @@ public class AuthController {
                 .collect(Collectors.toList());
     }
 
+    // ... 原有代码 ...
 
+    // 1. 获取所有用户列表 (支持手机号模糊搜索)
+    @GetMapping("/admin/users")
+    public ApiResponse<List<User>> getAllUsers(@RequestParam(required = false) String phone) {
+        List<User> users;
+        if (phone != null && !phone.isEmpty()) {
+            // 需要在 UserRepository 增加 findByPhoneContaining 方法
+            users = userRepository.findByPhoneContaining(phone);
+        } else {
+            users = userRepository.findAll();
+        }
+        // 处于安全考虑，返回前把密码置空
+        users.forEach(u -> u.setPassword(null));
+        return ApiResponse.success(users);
+    }
+
+    // 2. 管理员修改会员等级
+    @PutMapping("/admin/users/{userId}/membership")
+    public ApiResponse<Void> updateUserMembership(@PathVariable Integer userId, @RequestParam MembershipLevel level) {
+        authService.updateMembership(userId, level);
+        return ApiResponse.success(null, "会员等级已更新");
+    }
+
+    // 3. 管理员重置密码
+    @PutMapping("/admin/users/{userId}/reset-password")
+    public ApiResponse<Void> resetUserPassword(@PathVariable Integer userId) {
+        authService.resetPassword(userId);
+        return ApiResponse.success(null, "密码已重置为 123456");
+    }
 
 }

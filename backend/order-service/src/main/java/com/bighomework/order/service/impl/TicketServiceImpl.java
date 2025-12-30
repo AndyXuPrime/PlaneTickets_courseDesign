@@ -8,7 +8,9 @@ import com.bighomework.common.feign.AuthFeignClient;
 import com.bighomework.common.feign.FlightFeignClient;
 import com.bighomework.common.util.ApiResponse;
 import com.bighomework.order.entity.Ticket;
+import com.bighomework.order.entity.TicketStatusLog;
 import com.bighomework.order.repository.TicketRepository;
+import com.bighomework.order.repository.TicketStatusLogRepository;
 import com.bighomework.order.service.TicketService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,14 +28,19 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TicketServiceImpl implements TicketService {
 
+    // 统一使用构造器注入 (Lombok)
     private final TicketRepository ticketRepository;
+    private final TicketStatusLogRepository logRepository; // 新增：日志仓库
     private final FlightFeignClient flightFeignClient;
     private final AuthFeignClient authFeignClient;
+
+    // =================================================================================
+    //                                  用户端功能
+    // =================================================================================
 
     @Override
     @Transactional
     public List<TicketVO> createTickets(BookingRequest request, String username) {
-        // 打印前端传来的名字，确保接收到了
         log.info(">>> [Booking Start] User: {}, Names: {}", username, request.getPassengerNames());
 
         // 1. 获取订票人信息 (为了拿 UserID 绑定订单)
@@ -42,7 +49,7 @@ public class TicketServiceImpl implements TicketService {
         // 2. 获取航班信息 (为了拿价格)
         FlightSearchVO flight = fetchFlightInfo(request.getFlightNumber());
 
-        // 3. 构建机票 (直接使用前端传来的名字)
+        // 3. 构建机票 (直接使用前端传来的名字，不再进行复杂的 ID 匹配)
         List<Ticket> ticketsToSave = buildTickets(request, booker, flight);
 
         // 4. 保存入库
@@ -60,7 +67,6 @@ public class TicketServiceImpl implements TicketService {
         }
     }
 
-    // 逻辑简化：直接遍历名字列表，不再进行 ID 匹配
     private List<Ticket> buildTickets(BookingRequest req, LoginResponse booker, FlightSearchVO flight) {
         BigDecimal finalPrice = applyMembershipDiscount(flight.getPrice(), booker.getMembershipLevel());
         List<Ticket> list = new ArrayList<>();
@@ -75,7 +81,7 @@ public class TicketServiceImpl implements TicketService {
             ticket.setPrice(finalPrice);
             ticket.setStatus(TicketStatus.已支付);
             ticket.setBookingTime(now);
-            ticket.setPaymentTime(now);
+            ticket.setPaymentTime(now); // 支付状态必须有支付时间
 
             // 直接设置名字
             ticket.setPassengerName(name);
@@ -88,31 +94,40 @@ public class TicketServiceImpl implements TicketService {
     @Override
     @Transactional
     public void refundTicket(Long ticketId, String username) {
-        // ... (保持之前的修复版本不变)
+        log.info(">>> [Refund Request] TicketID: {}, User: {}", ticketId, username);
+
         LoginResponse user = fetchBookerInfo(username);
         Ticket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new BusinessException("Ticket not found"));
 
+        // 权限校验
         if (!ticket.getUserId().equals(user.getId())) {
             throw new BusinessException("You can only refund your own tickets.");
         }
+        // 状态校验
         if (ticket.getStatus() == TicketStatus.已取消) {
             throw new BusinessException("Ticket is already cancelled.");
         }
 
+        // 记录日志
+        saveLog(ticket, ticket.getStatus(), TicketStatus.已取消, "用户退票");
+
+        // 更新状态并清空支付时间 (满足数据库约束)
         ticket.setStatus(TicketStatus.已取消);
         ticket.setPaymentTime(null);
+
         ticketRepository.save(ticket);
+        log.info(">>> [Refund Success] Ticket {} cancelled.", ticketId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<LogicalOrderVO> getMyOrders(String username) {
-        // ... (保持不变)
         try {
             LoginResponse userResp = fetchBookerInfo(username);
             List<Ticket> tickets = ticketRepository.findByUserId(userResp.getId());
 
+            // 按 "预订时间 + 航班号" 分组，模拟订单概念
             Map<String, List<Ticket>> grouped = tickets.stream().collect(Collectors.groupingBy(t ->
                     (t.getBookingTime() != null ? t.getBookingTime().toString() : "0") + "@" + t.getFlightNumber()));
 
@@ -128,19 +143,71 @@ public class TicketServiceImpl implements TicketService {
                     }).sorted((a, b) -> b.getFlightDate().compareTo(a.getFlightDate()))
                     .collect(Collectors.toList());
         } catch (Exception e) {
+            log.error("Error fetching orders", e);
             return new ArrayList<>();
         }
     }
 
-    // --- Helper Methods ---
+    // =================================================================================
+    //                                  管理员功能
+    // =================================================================================
+
+    @Override
+    public List<Ticket> searchTickets(String flightNumber, TicketStatus status) {
+        if (flightNumber != null && !flightNumber.isEmpty() && status != null) {
+            return ticketRepository.findByFlightNumberAndStatus(flightNumber, status);
+        } else if (flightNumber != null && !flightNumber.isEmpty()) {
+            return ticketRepository.findByFlightNumber(flightNumber);
+        } else if (status != null) {
+            return ticketRepository.findByStatus(status);
+        }
+        return ticketRepository.findAll();
+    }
+
+    @Override
+    @Transactional
+    public void checkInTicket(Long ticketId) {
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new BusinessException("机票不存在"));
+
+        if (ticket.getStatus() != TicketStatus.已支付) {
+            throw new BusinessException("只有已支付的机票才能办理登机");
+        }
+
+        TicketStatus oldStatus = ticket.getStatus();
+
+        // 办理登机 (状态改为已使用)
+        ticket.setStatus(TicketStatus.已使用);
+        ticketRepository.save(ticket);
+
+        // 记录日志
+        saveLog(ticket, oldStatus, TicketStatus.已使用, "管理员核销");
+    }
+
+    @Override
+    public List<TicketStatusLog> getTicketLogs(Long ticketId) {
+        return logRepository.findByTicketTicketIdOrderByChangeTimeDesc(ticketId);
+    }
+
+    // =================================================================================
+    //                                  私有辅助方法
+    // =================================================================================
+
+    private void saveLog(Ticket ticket, TicketStatus oldS, TicketStatus newS, String by) {
+        TicketStatusLog log = new TicketStatusLog();
+        log.setTicket(ticket);
+        log.setOldStatus(oldS);
+        log.setNewStatus(newS);
+        log.setChangedBy(by);
+        log.setChangeTime(LocalDateTime.now());
+        logRepository.save(log);
+    }
 
     private LoginResponse fetchBookerInfo(String username) {
         ApiResponse<LoginResponse> resp = authFeignClient.getUserByPhone(username);
         if (resp == null || resp.getData() == null) throw new BusinessException("User not found via Auth Service");
         return resp.getData();
     }
-
-    // 注意：fetchFamilyList 方法已经不需要了，可以删掉
 
     private FlightSearchVO fetchFlightInfo(String flightNumber) {
         ApiResponse<FlightSearchVO> resp = flightFeignClient.getFlightByNumber(flightNumber);

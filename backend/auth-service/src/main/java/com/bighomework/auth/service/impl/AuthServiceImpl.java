@@ -10,6 +10,7 @@ import com.bighomework.common.dto.requestDTO.RegisterRequest;
 import com.bighomework.common.dto.requestDTO.UpdatePasswordRequest;
 import com.bighomework.common.dto.requestDTO.UpdateProfileRequest;
 import com.bighomework.common.enums.Gender;
+import com.bighomework.common.enums.MembershipLevel;
 import com.bighomework.common.enums.UserRole;
 import com.bighomework.common.enums.UserStatus;
 import com.bighomework.common.exception.BusinessException;
@@ -156,5 +157,22 @@ public class AuthServiceImpl implements AuthService {
         }
         int genderCode = Character.getNumericValue(idCard.charAt(16));
         return (genderCode % 2 != 0) ? Gender.男 : Gender.女;
+    }
+
+    @Override
+    @Transactional
+    public void updateMembership(Integer userId, MembershipLevel level) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException("用户不存在"));
+        user.setMembershipLevel(level);
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public void resetPassword(Integer userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException("用户不存在"));
+        // 默认重置为 123456
+        user.setPassword(passwordEncoder.encode("123456"));
+        userRepository.save(user);
     }
 }
