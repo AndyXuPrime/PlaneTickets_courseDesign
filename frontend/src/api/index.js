@@ -69,7 +69,9 @@ export default {
     getAllUsers: (phone) => apiClient.get('/api/auth/admin/users', { params: { phone } }),
     updateUserMembership: (userId, level) => apiClient.put(`/api/auth/admin/users/${userId}/membership`, null, { params: { level } }),
     resetUserPassword: (userId) => apiClient.put(`/api/auth/admin/users/${userId}/reset-password`),
-
+// 消息相关
+    publishMessage: (data) => apiClient.post('/api/admin/messages/publish', data),
+    getSystemMessages: () => apiClient.get('/api/admin/messages/public'),
     // 订单管理 (注意：这里全部改成了 apiClient)
     getAllTickets: (params) => apiClient.get('/api/bookings/admin/tickets', { params }),
     checkInTicket: (ticketId) => apiClient.put(`/api/bookings/admin/tickets/${ticketId}/check-in`),

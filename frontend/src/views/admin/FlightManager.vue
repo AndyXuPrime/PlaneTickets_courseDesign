@@ -189,6 +189,9 @@ export default {
           this.$message.success('已更新');
           this.fetchFlights();
         }
+      }).catch(() => {
+        // === 【关键修复】加上这个 catch 块 ===
+        this.$message.info('已取消修改');
       });
     },
     handleCancel(row) {

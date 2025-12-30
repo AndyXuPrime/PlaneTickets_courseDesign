@@ -23,7 +23,6 @@
             <el-table-column prop="0" label="航班号"></el-table-column>
             <el-table-column label="销售热度">
               <template slot-scope="scope">
-                <!-- 【修复点】使用了 scope.row[1] 来计算百分比，解决了 ESLint 报错 -->
                 <el-progress
                     :percentage="Math.min(scope.row[1] * 10, 100)"
                     :status="scope.row[1] > 5 ? 'exception' : 'success'">

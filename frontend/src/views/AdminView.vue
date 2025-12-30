@@ -8,16 +8,15 @@
       </div>
 
       <el-menu
-          :default-active="activeMenu"
+          :default-active="$route.path"
           :collapse="isCollapse"
-          :collapse-transition="false"
           background-color="#304156"
           text-color="#bfcbd9"
           active-text-color="#409EFF"
           class="el-menu-vertical"
-          @select="handleMenuSelect"
+          router
       >
-        <el-menu-item index="dashboard">
+        <el-menu-item index="/admin/dashboard">
           <i class="el-icon-odometer"></i>
           <span slot="title">数据概览</span>
         </el-menu-item>
@@ -27,8 +26,9 @@
             <i class="el-icon-office-building"></i>
             <span slot="title">资源管理</span>
           </template>
-          <el-menu-item index="airlines" v-if="isPlatformAdmin">航司列表</el-menu-item>
-          <el-menu-item index="flights">航班调度</el-menu-item>
+          <el-menu-item index="/admin/flights">航班调度</el-menu-item>
+          <!-- 仅平台管理员可见 -->
+          <el-menu-item index="/admin/airlines" v-if="isPlatformAdmin">航司列表</el-menu-item>
         </el-submenu>
 
         <el-submenu index="ticketing">
@@ -36,16 +36,20 @@
             <i class="el-icon-tickets"></i>
             <span slot="title">票务中心</span>
           </template>
-          <el-menu-item index="orders">所有订单</el-menu-item>
-          <el-menu-item index="audit-logs">操作审计</el-menu-item>
+          <el-menu-item index="/admin/orders">所有订单</el-menu-item>
         </el-submenu>
 
-        <el-menu-item index="crm" v-if="isPlatformAdmin">
+        <el-menu-item index="/admin/users" v-if="isPlatformAdmin">
           <i class="el-icon-user"></i>
           <span slot="title">用户管理</span>
         </el-menu-item>
 
-        <el-menu-item index="audit" v-if="isPlatformAdmin">
+        <el-menu-item index="/admin/messages" v-if="isPlatformAdmin">
+          <i class="el-icon-chat-dot-square"></i>
+          <span slot="title">消息发布</span>
+        </el-menu-item>
+
+        <el-menu-item index="/admin/audit" v-if="isPlatformAdmin">
           <i class="el-icon-medal"></i>
           <span slot="title">入驻审核</span>
         </el-menu-item>
@@ -56,14 +60,10 @@
       <!-- 顶栏 -->
       <el-header class="admin-header">
         <div class="header-left">
-          <i
-              :class="isCollapse ? 'el-icon-s-unfold' : 'el-icon-s-fold'"
-              class="collapse-btn"
-              @click="isCollapse = !isCollapse"
-          ></i>
+          <i :class="isCollapse ? 'el-icon-s-unfold' : 'el-icon-s-fold'" class="collapse-btn" @click="isCollapse = !isCollapse"></i>
           <el-breadcrumb separator="/" class="breadcrumb">
             <el-breadcrumb-item>管理系统</el-breadcrumb-item>
-            <el-breadcrumb-item>{{ menuTitle }}</el-breadcrumb-item>
+            <el-breadcrumb-item>{{ $route.meta.title }}</el-breadcrumb-item>
           </el-breadcrumb>
         </div>
 
@@ -85,9 +85,7 @@
       <!-- 主内容区 -->
       <el-main class="admin-main">
         <transition name="fade-transform" mode="out-in">
-          <div :key="activeMenu" class="content-wrapper">
-            <component :is="currentComponent" :is-platform-admin="isPlatformAdmin" />
-          </div>
+          <router-view class="content-wrapper" />
         </transition>
       </el-main>
     </el-container>
@@ -96,36 +94,12 @@
 
 <script>
 import { store, mutations } from '@/store';
-import AdminDashboard from './admin/AdminDashboard.vue';
-import AirlineManager from './admin/AirlineManager.vue';
-import FlightManager from './admin/FlightManager.vue';
-import OrderManager from './admin/OrderManager.vue';
-import UserManager from './admin/UserManager.vue';
-import AuditManager from './admin/AuditManager.vue';
 
 export default {
   name: 'AdminView',
-  components: { AdminDashboard, AirlineManager, FlightManager, OrderManager, UserManager, AuditManager },
   data() {
     return {
-      activeMenu: 'dashboard',
-      isCollapse: false,
-      componentMap: {
-        'dashboard': 'AdminDashboard',
-        'airlines': 'AirlineManager',
-        'flights': 'FlightManager',
-        'orders': 'OrderManager',
-        'crm': 'UserManager',
-        'audit': 'AuditManager'
-      },
-      titleMap: {
-        'dashboard': '数据概览',
-        'airlines': '航司管理',
-        'flights': '航班调度',
-        'orders': '订单管理',
-        'crm': '用户管理',
-        'audit': '入驻审核'
-      }
+      isCollapse: false
     };
   },
   computed: {
@@ -135,12 +109,9 @@ export default {
       if (this.user?.role === 'ROLE_PLATFORM_ADMIN') return '平台总管';
       if (this.user?.role === 'ROLE_AIRLINE_ADMIN') return '航司管理员';
       return '未知角色';
-    },
-    currentComponent() { return this.componentMap[this.activeMenu] || 'AdminDashboard'; },
-    menuTitle() { return this.titleMap[this.activeMenu] || '控制台'; }
+    }
   },
   methods: {
-    handleMenuSelect(index) { this.activeMenu = index; },
     logout() {
       this.$confirm('确认退出管理系统吗？', '提示', { type: 'warning' }).then(() => {
         mutations.clearUser();
@@ -152,10 +123,7 @@ export default {
 </script>
 
 <style scoped>
-.admin-layout {
-  height: 100vh;
-  overflow: hidden;
-}
+.admin-layout { height: 100vh; overflow: hidden; }
 
 /* 侧边栏 */
 .sidebar-container {
@@ -164,6 +132,7 @@ export default {
   z-index: 1001;
   display: flex;
   flex-direction: column;
+  transition: width 0.3s;
 }
 
 .admin-logo {
@@ -177,16 +146,9 @@ export default {
   overflow: hidden;
   white-space: nowrap;
 }
-.admin-logo i {
-  margin-right: 8px;
-  font-size: 20px;
-  color: #409EFF;
-}
+.admin-logo i { margin-right: 8px; font-size: 20px; color: #409EFF; }
 
-.el-menu-vertical {
-  border: none;
-  flex: 1;
-}
+.el-menu-vertical { border: none; flex: 1; }
 
 /* 顶栏 */
 .admin-header {
@@ -199,20 +161,9 @@ export default {
   z-index: 1000;
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
-}
-
-.collapse-btn {
-  font-size: 20px;
-  cursor: pointer;
-  margin-right: 20px;
-  transition: color 0.3s;
-}
-.collapse-btn:hover {
-  color: #409EFF;
-}
+.header-left { display: flex; align-items: center; }
+.collapse-btn { font-size: 20px; cursor: pointer; margin-right: 20px; transition: color 0.3s; }
+.collapse-btn:hover { color: #409EFF; }
 
 .header-right .user-profile {
   display: flex;
@@ -222,41 +173,21 @@ export default {
   border-radius: 4px;
   transition: background 0.3s;
 }
-.header-right .user-profile:hover {
-  background: #f6f6f6;
-}
-.user-name {
-  margin: 0 8px;
-  font-size: 14px;
-  color: #606266;
-}
+.header-right .user-profile:hover { background: #f6f6f6; }
+.user-name { margin: 0 8px; font-size: 14px; color: #606266; }
 
 /* 主内容区 */
-.admin-main {
-  background-color: #f0f2f5;
-  padding: 20px;
-  overflow-y: auto;
-}
-
+.admin-main { background-color: #f0f2f5; padding: 20px; overflow-y: auto; }
 .content-wrapper {
   background: #fff;
   padding: 20px;
   border-radius: 4px;
-  min-height: 100%;
+  min-height: calc(100vh - 100px);
   box-shadow: 0 2px 12px 0 rgba(0,0,0,0.05);
 }
 
-/* 动画效果 */
-.fade-transform-enter-active,
-.fade-transform-leave-active {
-  transition: all .3s;
-}
-.fade-transform-enter {
-  opacity: 0;
-  transform: translateX(-30px);
-}
-.fade-transform-leave-to {
-  opacity: 0;
-  transform: translateX(30px);
-}
+/* 动画 */
+.fade-transform-enter-active, .fade-transform-leave-active { transition: all .3s; }
+.fade-transform-enter { opacity: 0; transform: translateX(-30px); }
+.fade-transform-leave-to { opacity: 0; transform: translateX(30px); }
 </style>

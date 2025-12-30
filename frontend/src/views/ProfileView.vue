@@ -20,6 +20,9 @@
             <el-menu-item index="family">
               <i class="el-icon-user"></i><span>常用乘机人</span>
             </el-menu-item>
+            <el-menu-item index="messages"> <!-- 新增菜单项 -->
+              <i class="el-icon-bell"></i><span>我的消息</span>
+            </el-menu-item>
             <el-menu-item index="security">
               <i class="el-icon-lock"></i><span>安全中心 (改密)</span>
             </el-menu-item>
@@ -60,7 +63,7 @@
             </el-form>
           </div>
 
-          <!-- 面板 B: 常用乘机人管理 (关键新增) -->
+          <!-- 面板 B: 常用乘机人管理 -->
           <div v-if="activeTab === 'family'">
             <div class="pane-header">
               <h2 class="section-title">常用乘机人管理</h2>
@@ -98,7 +101,35 @@
             </el-dialog>
           </div>
 
-          <!-- 面板 C: 安全中心 (修改密码) -->
+          <!-- 面板 E: 我的消息 (新加入的模块) -->
+          <div v-if="activeTab === 'messages'">
+            <h2 class="section-title">系统通知</h2>
+
+            <div v-if="loading" class="loading-box"><i class="el-icon-loading"></i> 正在获取最新消息...</div>
+
+            <div v-else-if="messages.length === 0" class="empty-box">
+              <i class="el-icon-chat-dot-round" style="font-size: 40px; color: #ddd;"></i>
+              <p>暂无系统消息</p>
+            </div>
+
+            <el-collapse v-else v-model="activeMessageNames" accordion class="message-collapse">
+              <el-collapse-item v-for="msg in messages" :key="msg.msgId" :name="msg.msgId">
+                <template slot="title">
+                  <div class="msg-header">
+                    <span class="msg-title">
+                      <i class="el-icon-message-solid" style="color: #E6A23C; margin-right: 5px;"></i>
+                      {{ msg.title }}
+                    </span>
+                    <span class="msg-time">{{ formatTime(msg.createTime) }}</span>
+                  </div>
+                </template>
+                <div class="msg-content">{{ msg.content }}</div>
+                <div class="msg-footer">发布人: {{ msg.publisher }}</div>
+              </el-collapse-item>
+            </el-collapse>
+          </div>
+
+          <!-- 面板 C: 安全中心 -->
           <div v-if="activeTab === 'security'">
             <h2 class="section-title">修改登录密码</h2>
             <el-form :model="pwdForm" label-position="top" class="form-container">
@@ -150,22 +181,45 @@ export default {
       loading: false,
       user: { ...store.user },
       pwdForm: { oldPassword: '', newPassword: '', confirmPassword: '' },
-      // 家人管理相关数据
+      // 家人管理数据
       familyList: [],
       showFamilyDialog: false,
       familyForm: { name: '', phone: '', idCard: '' },
+      // 消息管理数据
+      messages: [],
+      activeMessageNames: [],
       uploadHeaders: { Authorization: 'Bearer ' + localStorage.getItem('authToken') }
     };
   },
   watch: {
-    // 监听标签页切换，如果是切换到家人管理，则获取数据
     activeTab(newTab) {
       if (newTab === 'family') {
         this.fetchFamily();
+      } else if (newTab === 'messages') {
+        this.fetchMessages();
       }
     }
   },
   methods: {
+    // --- 消息逻辑 ---
+    async fetchMessages() {
+      this.loading = true;
+      try {
+        const res = await api.getSystemMessages();
+        if (res.code === 200) {
+          this.messages = res.data;
+        }
+      } catch (e) {
+        // 错误已由拦截器处理
+      } finally {
+        this.loading = false;
+      }
+    },
+    formatTime(time) {
+      if (!time) return '';
+      return new Date(time).toLocaleString();
+    },
+
     // --- 个人资料逻辑 ---
     handleAvatarSuccess(res) {
       if (res.code === 200) {
@@ -248,15 +302,24 @@ export default {
 
 .main-content-pane { padding: 40px 60px; background-color: #fff; }
 .pane-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.section-title { font-size: 22px; color: #303133; border-left: 4px solid #409EFF; padding-left: 15px; margin: 0; }
+.section-title { font-size: 22px; color: #303133; border-left: 4px solid #409EFF; padding-left: 15px; margin: 0 0 20px 0; }
 .form-container { max-width: 500px; margin-top: 20px; }
+
+/* 消息样式 */
+.message-collapse { border-top: 1px solid #ebeef5; }
+.msg-header { display: flex; justify-content: space-between; width: 100%; padding-right: 20px; }
+.msg-title { font-weight: bold; color: #303133; }
+.msg-time { color: #909399; font-size: 13px; }
+.msg-content { padding: 10px 0; color: #606266; line-height: 1.6; white-space: pre-wrap; }
+.msg-footer { text-align: right; color: #C0C4CC; font-size: 12px; margin-top: 10px; }
+.empty-box { text-align: center; color: #909399; margin-top: 50px; }
+.loading-box { text-align: center; padding: 20px; color: #909399; }
 
 /* 头像上传美化 */
 .avatar-uploader { border: 1px dashed #d9d9d9; border-radius: 50%; cursor: pointer; width: 100px; height: 100px; overflow: hidden; transition: 0.3s; }
 .avatar-uploader:hover { border-color: #409EFF; }
 .avatar-icon { font-size: 28px; color: #8c939d; line-height: 100px; text-align: center; width: 100px; }
 .avatar-img { width: 100px; height: 100px; object-fit: cover; }
-.upload-tip { font-size: 12px; color: #999; margin-top: 10px; }
 .save-btn { margin-top: 20px; width: 200px; }
 
 .old-features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }

@@ -1,6 +1,8 @@
 import Vue from 'vue';
 import VueRouter from 'vue-router';
 import HomeView from '../views/HomeView.vue';
+// 1. 引入你的布局文件 AdminView
+import AdminLayout from '../views/AdminView.vue';
 
 Vue.use(VueRouter);
 
@@ -11,36 +13,67 @@ const routes = [
   { path: '/service', name: 'CustomerService', component: () => import('../views/CustomerServiceView.vue'), meta: { title: '客户服务' } },
   { path: '/about', name: 'About', component: () => import('../views/AboutView.vue'), meta: { title: '关于我们' } },
 
-  /* --- 用户受限页面 (需登录) --- */
+  /* --- 用户受限页面 --- */
   { path: '/booking', name: 'Booking', component: () => import('../views/BookingView.vue'), meta: { title: '订单确认', requiresAuth: true } },
   { path: '/orders', name: 'MyOrders', component: () => import('../views/MyTicketsView.vue'), meta: { title: '我的行程', requiresAuth: true } },
   { path: '/profile', name: 'Profile', component: () => import('../views/ProfileView.vue'), meta: { title: '用户中心', requiresAuth: true } },
 
-  /* --- 管理员后台页面 --- */
-  {
-    path: '/admin-login',
-    name: 'AdminLogin',
-    component: () => import('../views/AdminLoginView.vue'),
-    meta: { title: '系统管理登录' }
-  },
-  {
-    path: '/admin-register',
-    name: 'AdminRegister',
-    component: () => import('../views/AdminRegisterView.vue'),
-    meta: { title: '航司入驻申请' }
-  },
+  /* --- 管理员登录/注册 --- */
+  { path: '/admin-login', name: 'AdminLogin', component: () => import('../views/AdminLoginView.vue'), meta: { title: '系统管理登录' } },
+  { path: '/admin-register', name: 'AdminRegister', component: () => import('../views/AdminRegisterView.vue'), meta: { title: '航司入驻申请' } },
+
+  // === 核心后台路由配置 ===
   {
     path: '/admin',
-    name: 'Admin',
-    component: () => import('../views/AdminView.vue'),
-    meta: { title: '后台管理面板', requiresAuth: true, requiresAdmin: true }
+    component: AdminLayout, // 使用 AdminView.vue 作为布局
+    meta: { requiresAuth: true, requiresAdmin: true },
+    children: [
+      {
+        path: '',
+        redirect: 'dashboard'
+      },
+      {
+        path: 'dashboard',
+        name: 'Dashboard',
+        // 注意路径：src/views/admin/AdminDashboard.vue
+        component: () => import('../views/admin/AdminDashboard.vue'),
+        meta: { title: '数据概览' }
+      },
+      {
+        path: 'flights',
+        name: 'FlightManager',
+        component: () => import('../views/admin/FlightManager.vue'),
+        meta: { title: '航班调度' }
+      },
+      {
+        path: 'users',
+        name: 'UserManager',
+        component: () => import('../views/admin/UserManager.vue'),
+        meta: { title: '用户管理' }
+      },
+      {
+        path: 'orders',
+        name: 'OrderManager',
+        component: () => import('../views/admin/OrderManager.vue'),
+        meta: { title: '票务中心' }
+      },
+      {
+        path: 'audit',
+        name: 'AuditManager',
+        component: () => import('../views/admin/AuditManager.vue'),
+        meta: { title: '入驻审核' }
+      },
+      // 【新增】消息管理路由
+      // 我注意到你截图里叫 MessagePublish.vue，所以我这里改成了 MessagePublish.vue
+      {
+        path: 'messages',
+        name: 'MessageManager',
+        component: () => import('../views/admin/MessagePublish.vue'),
+        meta: { title: '消息发布', role: 'ROLE_PLATFORM_ADMIN' }
+      }
+    ]
   },
-  {
-    path: '/profile',
-    name: 'UserCenter',
-    component: () => import('../views/ProfileView.vue'),
-    meta: { title: '用户中心', requiresAuth: true }
-  },
+
   /* --- 异常页面 --- */
   { path: '*', name: 'NotFound', component: () => import('../views/NotFoundView.vue'), meta: { title: '页面未找到' } }
 ];
@@ -69,12 +102,12 @@ router.beforeEach((to, from, next) => {
 
   // 1. 处理后台管理路径 (/admin/**)
   if (to.path.startsWith('/admin')) {
-    // 【关键修复】如果是去登录页或注册页，直接放行，不校验 token
+    // 如果是去登录页或注册页，直接放行
     if (to.name === 'AdminLogin' || to.name === 'AdminRegister') {
       return next();
     }
 
-    // 访问正式后台页面（如 /admin），校验身份
+    // 访问正式后台页面，校验身份
     if (!token || !user) {
       return next({ name: 'AdminLogin' });
     }
