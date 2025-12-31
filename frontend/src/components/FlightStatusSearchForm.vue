@@ -1,16 +1,16 @@
 <template>
   <div class="flight-status-form">
     <div class="input-group">
-      <el-input 
-        placeholder="请填写航班号进行查询，例如 CA1407" 
-        v-model.trim="flightNumber" 
+      <el-input
+        placeholder="请填写航班号进行查询，例如 CA1407"
+        v-model.trim="flightNumber"
         class="flight-input"
         clearable
         @keyup.enter.native="submitSearch"
       >
         <i slot="prefix" class="el-input__icon el-icon-s-promotion"></i>
       </el-input>
-      
+
       <el-button type="warning" @click="submitSearch" class="search-btn-inline" :disabled="isLoading">
         <i class="el-icon-search"></i> 搜索动态
       </el-button>

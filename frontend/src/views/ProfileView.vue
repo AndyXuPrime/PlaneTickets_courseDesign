@@ -1,172 +1,155 @@
 <template>
   <div class="user-center-page">
     <el-card class="main-layout-card" :body-style="{ padding: '0px' }">
-      <el-container style="min-height: 650px;">
-
-        <!-- 左侧：功能切换菜单 -->
-        <el-aside width="240px" class="aside-menu">
-          <div class="user-avatar-section">
-            <el-avatar :size="80" :src="user.avatarUrl" icon="el-icon-user-solid"></el-avatar>
+      <el-container style="min-height: 720px;">
+        <!-- 左侧导航 -->
+        <el-aside width="260px" class="aside-menu">
+          <div class="user-profile-header">
+            <div class="avatar-wrapper">
+              <el-avatar :size="90" :src="user.avatarUrl" icon="el-icon-user-solid"></el-avatar>
+              <div class="vip-badge" :style="{ backgroundColor: '#DCC87F' }"><i class="el-icon-medal"></i></div>
+            </div>
             <div class="user-name-tag">
               <span class="name">{{ user.name }}</span>
-              <el-tag size="mini" type="warning" effect="dark">{{ user.membershipLevel }}会员</el-tag>
+              <div class="membership-label">VIP {{ user.membershipLevel }}</div>
             </div>
           </div>
-
-          <el-menu :default-active="activeTab" @select="activeTab = $event" class="side-menu">
-            <el-menu-item index="info">
-              <i class="el-icon-edit-outline"></i><span>修改个人资料</span>
-            </el-menu-item>
-            <el-menu-item index="family">
-              <i class="el-icon-user"></i><span>常用乘机人</span>
-            </el-menu-item>
-            <el-menu-item index="messages"> <!-- 新增菜单项 -->
-              <i class="el-icon-bell"></i><span>我的消息</span>
-            </el-menu-item>
-            <el-menu-item index="security">
-              <i class="el-icon-lock"></i><span>安全中心 (改密)</span>
-            </el-menu-item>
-            <el-menu-item index="benefits">
-              <i class="el-icon-medal"></i><span>会员权益 & 说明</span>
-            </el-menu-item>
+          <el-menu :default-active="activeTab" @select="activeTab = $event" class="side-menu-custom">
+            <el-menu-item index="info"><i class="el-icon-edit"></i><span>资料修改</span></el-menu-item>
+            <el-menu-item index="family"><i class="el-icon-user"></i><span>乘机人管理</span></el-menu-item>
+            <el-menu-item index="messages"><i class="el-icon-bell"></i><span>系统通知</span></el-menu-item>
+            <el-menu-item index="security"><i class="el-icon-lock"></i><span>安全中心</span></el-menu-item>
+            <el-menu-item index="benefits"><i class="el-icon-trophy"></i><span>会员权益</span></el-menu-item>
           </el-menu>
         </el-aside>
 
-        <!-- 右侧：功能面板 -->
+        <!-- 右侧内容 -->
         <el-main class="main-content-pane">
-
-          <!-- 面板 A: 个人资料修改 -->
-          <div v-if="activeTab === 'info'">
-            <h2 class="section-title">个人资料修改</h2>
-            <el-form label-position="top" class="form-container">
-              <el-form-item label="用户头像 (点击图片更换)">
-                <el-upload
-                    class="avatar-uploader"
-                    action="http://localhost:8080/api/files/upload?bizType=avatars"
-                    :headers="uploadHeaders"
-                    :show-file-list="false"
-                    :on-success="handleAvatarSuccess">
-                  <img v-if="user.avatarUrl" :src="user.avatarUrl" class="avatar-img">
-                  <i v-else class="el-icon-plus avatar-icon"></i>
+          <!-- 个人资料 -->
+          <div v-if="activeTab === 'info'" class="pane-fade-in">
+            <h2 class="pane-title">个人资料修改</h2>
+            <el-form label-position="top" class="custom-form">
+              <el-form-item label="形象头像">
+                <el-upload class="custom-avatar-uploader" action="http://localhost:8080/api/files/upload?bizType=avatars"
+                           :headers="uploadHeaders" :show-file-list="false" :on-success="handleAvatarSuccess">
+                  <img v-if="user.avatarUrl" :src="user.avatarUrl" class="uploaded-img">
+                  <i v-else class="el-icon-camera uploader-icon"></i>
                 </el-upload>
               </el-form-item>
-
-              <el-form-item label="电子邮箱">
-                <el-input v-model="user.email" placeholder="example@mail.com"></el-input>
-              </el-form-item>
-
-              <el-form-item label="手机号码 (不可修改)">
-                <el-input :value="user.username" disabled></el-input>
-              </el-form-item>
-
-              <el-button type="primary" class="save-btn" @click="submitProfile" :loading="loading">保存资料修改</el-button>
+              <el-form-item label="电子邮箱"><el-input v-model="user.email"></el-input></el-form-item>
+              <el-form-item label="手机号码 (只读)"><el-input :value="user.username" disabled></el-input></el-form-item>
+              <el-button type="primary" class="theme-btn" @click="submitProfile" :loading="loading">保存修改</el-button>
             </el-form>
           </div>
 
-          <!-- 面板 B: 常用乘机人管理 -->
-          <div v-if="activeTab === 'family'">
+          <!-- 常用乘机人 -->
+          <div v-if="activeTab === 'family'" class="pane-fade-in">
             <div class="pane-header">
-              <h2 class="section-title">常用乘机人管理</h2>
-              <el-button type="primary" size="small" icon="el-icon-plus" @click="showFamilyDialog = true">新增乘机人</el-button>
+              <h2 class="pane-title">常用乘机人</h2>
+              <el-button type="primary" size="small" class="theme-btn" @click="showFamilyDialog = true">新增人员</el-button>
             </div>
-
-            <el-table :data="familyList" border stripe style="width: 100%; margin-top: 20px" v-loading="loading">
-              <el-table-column prop="name" label="姓名" width="120"></el-table-column>
-              <el-table-column prop="phone" label="手机号" width="150"></el-table-column>
-              <el-table-column prop="idCard" label="身份证号 (加密存储)" min-width="200"></el-table-column>
-              <el-table-column label="操作" width="100" align="center">
+            <el-table :data="familyList" class="custom-table" v-loading="loading">
+              <el-table-column prop="name" label="姓名"></el-table-column>
+              <el-table-column prop="phone" label="联系电话"></el-table-column>
+              <el-table-column prop="idCard" label="证件号" min-width="180"></el-table-column>
+              <el-table-column label="操作" width="80" align="center">
                 <template slot-scope="scope">
-                  <el-button type="text" style="color: #f56c6c" @click="handleDeleteFamily(scope.row.memberId)">删除</el-button>
+                  <el-button type="text" class="danger-text" @click="handleDeleteFamily(scope.row.memberId)">删除</el-button>
                 </template>
               </el-table-column>
             </el-table>
-
-            <!-- 新增乘机人弹窗 -->
-            <el-dialog title="添加乘机人" :visible.sync="showFamilyDialog" width="400px" append-to-body>
-              <el-form :model="familyForm" label-position="top">
-                <el-form-item label="真实姓名">
-                  <el-input v-model="familyForm.name" placeholder="请输入姓名"></el-input>
-                </el-form-item>
-                <el-form-item label="手机号码">
-                  <el-input v-model="familyForm.phone" placeholder="选填"></el-input>
-                </el-form-item>
-                <el-form-item label="身份证号">
-                  <el-input v-model="familyForm.idCard" placeholder="请输入18位身份证号"></el-input>
-                </el-form-item>
-              </el-form>
-              <div slot="footer">
-                <el-button @click="showFamilyDialog = false">取消</el-button>
-                <el-button type="primary" @click="submitAddFamily" :loading="loading">确认添加</el-button>
-              </div>
-            </el-dialog>
           </div>
 
-          <!-- 面板 E: 我的消息 (新加入的模块) -->
-          <div v-if="activeTab === 'messages'">
-            <h2 class="section-title">系统通知</h2>
-
-            <div v-if="loading" class="loading-box"><i class="el-icon-loading"></i> 正在获取最新消息...</div>
-
-            <div v-else-if="messages.length === 0" class="empty-box">
-              <i class="el-icon-chat-dot-round" style="font-size: 40px; color: #ddd;"></i>
-              <p>暂无系统消息</p>
-            </div>
-
-            <el-collapse v-else v-model="activeMessageNames" accordion class="message-collapse">
+          <!-- 系统消息 -->
+          <div v-if="activeTab === 'messages'" class="pane-fade-in">
+            <h2 class="pane-title">系统通知</h2>
+            <div v-if="messages.length === 0" class="center-box">目前没有新通知</div>
+            <el-collapse v-else v-model="activeMessageNames" accordion class="custom-collapse">
               <el-collapse-item v-for="msg in messages" :key="msg.msgId" :name="msg.msgId">
                 <template slot="title">
-                  <div class="msg-header">
-                    <span class="msg-title">
-                      <i class="el-icon-message-solid" style="color: #E6A23C; margin-right: 5px;"></i>
-                      {{ msg.title }}
-                    </span>
-                    <span class="msg-time">{{ formatTime(msg.createTime) }}</span>
+                  <div class="msg-head-wrapper">
+                    <span class="msg-t">{{ msg.title }}</span>
+                    <span class="msg-d">{{ formatTime(msg.createTime) }}</span>
                   </div>
                 </template>
-                <div class="msg-content">{{ msg.content }}</div>
-                <div class="msg-footer">发布人: {{ msg.publisher }}</div>
+                <div class="msg-body">{{ msg.content }}</div>
               </el-collapse-item>
             </el-collapse>
           </div>
 
-          <!-- 面板 C: 安全中心 -->
-          <div v-if="activeTab === 'security'">
-            <h2 class="section-title">修改登录密码</h2>
-            <el-form :model="pwdForm" label-position="top" class="form-container">
-              <el-form-item label="原密码">
-                <el-input v-model="pwdForm.oldPassword" type="password" show-password></el-input>
-              </el-form-item>
-              <el-form-item label="新密码">
-                <el-input v-model="pwdForm.newPassword" type="password" show-password></el-input>
-              </el-form-item>
-              <el-form-item label="确认新密码">
-                <el-input v-model="pwdForm.confirmPassword" type="password" show-password></el-input>
-              </el-form-item>
-              <el-button type="danger" class="save-btn" @click="submitPassword" :loading="loading">确认重置密码</el-button>
+          <!-- 安全中心 -->
+          <div v-if="activeTab === 'security'" class="pane-fade-in">
+            <h2 class="pane-title">安全中心</h2>
+            <el-form :model="pwdForm" label-position="top" class="custom-form">
+              <el-form-item label="当前密码"><el-input v-model="pwdForm.oldPassword" type="password" show-password></el-input></el-form-item>
+              <el-form-item label="设置新密码"><el-input v-model="pwdForm.newPassword" type="password" show-password></el-input></el-form-item>
+              <el-form-item label="确认新密码"><el-input v-model="pwdForm.confirmPassword" type="password" show-password></el-input></el-form-item>
+              <el-button type="danger" class="danger-btn" @click="submitPassword" :loading="loading">重置登录密码</el-button>
             </el-form>
           </div>
 
-          <!-- 面板 D: 会员权益 -->
-          <div v-if="activeTab === 'benefits'">
-            <h2 class="section-title">我的会员服务</h2>
-            <div class="old-features-grid">
-              <div class="mini-card">以家庭为单位累积里程</div>
-              <div class="mini-card">清风航空高级会员服务</div>
-              <div class="mini-card">各地区的会员优惠</div>
-            </div>
-            <el-collapse accordion style="margin-top: 30px;">
-              <el-collapse-item title="清风航空会员卡 说明" name="1">
-                <div>您的电子会员卡已在App中激活。实体卡片将在您完成首次飞行后的2-4周内寄出。</div>
-              </el-collapse-item>
-              <el-collapse-item title="关于会员号/主卡的说明" name="2">
-                <div>您的会员号是您在我们这里的唯一身份标识。</div>
-              </el-collapse-item>
-            </el-collapse>
-          </div>
+          <!-- 会员权益模块 (参考设计优化) -->
+          <div v-if="activeTab === 'benefits'" class="pane-fade-in">
+            <h2 class="pane-title">蓝天云悦会员特权</h2>
+            <div class="membership-container">
+              <!-- 核心特权卡片 -->
+              <div class="dark-membership-card">
+                <div class="card-title-box">
+                  <span class="main-title">至臻飞行礼遇</span>
+                  <span class="sub-title">LEVEL: {{ user.membershipLevel }}</span>
+                </div>
+                <div class="separator"></div>
+                <ul class="benefit-list">
+                  <li class="element">
+                    <i class="el-icon-circle-check"></i>
+                    <span class="label">优先办理值机与登机</span>
+                  </li>
+                  <li class="element">
+                    <i class="el-icon-suitcase"></i>
+                    <span class="label">额外 20KG 免费托运行李额</span>
+                  </li>
+                  <li class="element">
+                    <i class="el-icon-coffee"></i>
+                    <span class="label">全球自营贵宾休息室准入</span>
+                  </li>
+                </ul>
+                <div class="separator"></div>
+                <ul class="benefit-list special">
+                  <li class="element highlight">
+                    <i class="el-icon-refresh"></i>
+                    <span class="label">积分商城 8.5 折兑换权益</span>
+                  </li>
+                </ul>
+              </div>
 
+              <div class="membership-stats">
+                <div class="stat-item" :style="{ borderLeft: '4px solid #DCC87F' }">
+                  <span class="s-label">当前里程积分</span>
+                  <span class="s-val">12,840 <small>pts</small></span>
+                </div>
+                <div class="stat-item" :style="{ borderLeft: '4px solid #82B1B7' }">
+                  <span class="s-label">升级还需航段</span>
+                  <span class="s-val">3 <small>segments</small></span>
+                </div>
+              </div>
+            </div>
+          </div>
         </el-main>
       </el-container>
     </el-card>
+
+    <!-- 弹窗 -->
+    <el-dialog title="新增常用乘机人" :visible.sync="showFamilyDialog" width="400px" append-to-body>
+      <el-form :model="familyForm" label-position="top">
+        <el-form-item label="姓名"><el-input v-model="familyForm.name" placeholder="与证件一致"></el-input></el-form-item>
+        <el-form-item label="证件号码"><el-input v-model="familyForm.idCard" placeholder="18位身份证号"></el-input></el-form-item>
+        <el-form-item label="联系电话"><el-input v-model="familyForm.phone" placeholder="选填"></el-input></el-form-item>
+      </el-form>
+      <div slot="footer">
+        <el-button @click="showFamilyDialog = false" size="small">取消</el-button>
+        <el-button type="primary" class="theme-btn" @click="submitAddFamily" :loading="loading" size="small">提交保存</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -181,50 +164,33 @@ export default {
       loading: false,
       user: { ...store.user },
       pwdForm: { oldPassword: '', newPassword: '', confirmPassword: '' },
-      // 家人管理数据
       familyList: [],
       showFamilyDialog: false,
       familyForm: { name: '', phone: '', idCard: '' },
-      // 消息管理数据
       messages: [],
       activeMessageNames: [],
       uploadHeaders: { Authorization: 'Bearer ' + localStorage.getItem('authToken') }
     };
   },
   watch: {
-    activeTab(newTab) {
-      if (newTab === 'family') {
-        this.fetchFamily();
-      } else if (newTab === 'messages') {
-        this.fetchMessages();
-      }
+    activeTab(val) {
+      if (val === 'family') this.fetchFamily();
+      else if (val === 'messages') this.fetchMessages();
     }
   },
   methods: {
-    // --- 消息逻辑 ---
     async fetchMessages() {
       this.loading = true;
       try {
         const res = await api.getSystemMessages();
-        if (res.code === 200) {
-          this.messages = res.data;
-        }
-      } catch (e) {
-        // 错误已由拦截器处理
-      } finally {
-        this.loading = false;
-      }
+        if (res.code === 200) this.messages = res.data;
+      } catch (e) { console.error('获取消息失败'); } finally { this.loading = false; }
     },
-    formatTime(time) {
-      if (!time) return '';
-      return new Date(time).toLocaleString();
-    },
-
-    // --- 个人资料逻辑 ---
+    formatTime(t) { return t ? new Date(t).toLocaleString() : ''; },
     handleAvatarSuccess(res) {
       if (res.code === 200) {
         this.user.avatarUrl = res.data;
-        this.$message.success('头像上传成功，请保存资料以生效');
+        this.$message.success('预览头像已就绪，请保存资料');
       }
     },
     async submitProfile() {
@@ -233,95 +199,108 @@ export default {
         const res = await api.updateProfile({ email: this.user.email, avatarUrl: this.user.avatarUrl });
         if (res.code === 200) {
           mutations.setUser({ ...store.user, ...this.user }, localStorage.getItem('authToken'));
-          this.$message.success('资料已同步');
+          this.$message.success('个人档案同步成功');
         }
-      } finally { this.loading = false; }
+      } catch (e) { console.error(e); } finally { this.loading = false; }
     },
-
-    // --- 家人管理逻辑 ---
     async fetchFamily() {
       this.loading = true;
       try {
         const res = await api.getFamily();
         if (res.code === 200) this.familyList = res.data;
-      } finally { this.loading = false; }
+      } catch (e) { console.error(e); } finally { this.loading = false; }
     },
     async submitAddFamily() {
-      if (!this.familyForm.name || !this.familyForm.idCard) {
-        return this.$message.warning('请填写姓名和身份证号');
-      }
+      if (!this.familyForm.name || !this.familyForm.idCard) return this.$message.warning('必填项缺失');
       this.loading = true;
       try {
         const res = await api.addFamily(this.familyForm);
         if (res.code === 200) {
-          this.$message.success('添加成功');
+          this.$message.success('乘机人已添加');
           this.showFamilyDialog = false;
           this.familyForm = { name: '', phone: '', idCard: '' };
           this.fetchFamily();
         }
-      } finally { this.loading = false; }
+      } catch (e) { console.error(e); } finally { this.loading = false; }
     },
     async handleDeleteFamily(id) {
       try {
-        await this.$confirm('确定要删除该乘机人吗？', '提示', { type: 'warning' });
+        await this.$confirm('确定移除该乘机人信息吗？', '操作确认', { type: 'warning' });
         const res = await api.deleteFamily(id);
-        if (res.code === 200) {
-          this.$message.success('已删除');
-          this.fetchFamily();
-        }
-      } catch (e) { /* 取消删除 */ }
+        if (res.code === 200) { this.$message.success('已移除'); this.fetchFamily(); }
+      } catch (e) { console.log('用户取消操作'); }
     },
-
-    // --- 密码逻辑 ---
     async submitPassword() {
-      if (this.pwdForm.newPassword !== this.pwdForm.confirmPassword) {
-        return this.$message.error('两次输入的新密码不匹配');
-      }
+      if (this.pwdForm.newPassword !== this.pwdForm.confirmPassword) return this.$message.error('两次输入的密码不一致');
       this.loading = true;
       try {
         const res = await api.updatePassword(this.pwdForm);
         if (res.code === 200) {
-          this.$message.success('密码修改成功，请重新登录');
+          this.$message.success('密码重置成功，请重新验证身份');
           mutations.clearUser();
           this.$router.push('/admin-login');
         }
-      } finally { this.loading = false; }
+      } catch (e) { console.error(e); } finally { this.loading = false; }
     }
   }
 };
 </script>
 
 <style scoped>
-.user-center-page { padding: 50px 20px; background-color: #f0f2f5; min-height: 90vh; }
-.main-layout-card { max-width: 1100px; margin: 0 auto; border-radius: 15px; }
-.aside-menu { background-color: #fff; border-right: 1px solid #f0f0f0; }
-.user-avatar-section { padding: 40px 20px; text-align: center; border-bottom: 1px solid #f5f7fa; }
+.user-center-page { padding: 60px 20px; background-color: #E4DFDB; min-height: 100vh; }
+.main-layout-card { max-width: 1100px; margin: 0 auto; border-radius: 20px; border: none; box-shadow: 0 25px 50px rgba(0,0,0,0.1); }
+
+/* 侧边栏 */
+.aside-menu { background-color: #fff; border-right: 1px solid #ABAAA5; }
+.user-profile-header { padding: 50px 20px 30px; text-align: center; background: #fdfdfd; }
+.avatar-wrapper { position: relative; display: inline-block; }
+.vip-badge { position: absolute; bottom: 0; right: 0; color: #fff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; }
 .user-name-tag { margin-top: 15px; }
-.user-name-tag .name { display: block; font-weight: bold; font-size: 18px; margin-bottom: 5px; }
-.side-menu { border-right: none; margin-top: 10px; }
+.user-name-tag .name { display: block; font-weight: 800; font-size: 20px; color: #333; }
+.membership-label { display: inline-block; margin-top: 8px; background: #DCC87F; color: #fff; padding: 2px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; }
 
+.side-menu-custom { border-right: none; padding: 10px; }
+.side-menu-custom .el-menu-item { border-radius: 12px; margin-bottom: 6px; transition: 0.3s; }
+.side-menu-custom .el-menu-item.is-active { background-color: #82B1B7 !important; color: #fff !important; }
+
+/* 内容区 */
 .main-content-pane { padding: 40px 60px; background-color: #fff; }
-.pane-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.section-title { font-size: 22px; color: #303133; border-left: 4px solid #409EFF; padding-left: 15px; margin: 0 0 20px 0; }
-.form-container { max-width: 500px; margin-top: 20px; }
+.pane-title { font-size: 24px; color: #333; font-weight: 800; margin: 0 0 35px 0; display: flex; align-items: center; }
+.pane-title::before { content: ''; width: 6px; height: 24px; background: #82B1B7; margin-right: 12px; border-radius: 3px; }
 
-/* 消息样式 */
-.message-collapse { border-top: 1px solid #ebeef5; }
-.msg-header { display: flex; justify-content: space-between; width: 100%; padding-right: 20px; }
-.msg-title { font-weight: bold; color: #303133; }
-.msg-time { color: #909399; font-size: 13px; }
-.msg-content { padding: 10px 0; color: #606266; line-height: 1.6; white-space: pre-wrap; }
-.msg-footer { text-align: right; color: #C0C4CC; font-size: 12px; margin-top: 10px; }
-.empty-box { text-align: center; color: #909399; margin-top: 50px; }
-.loading-box { text-align: center; padding: 20px; color: #909399; }
+/* 会员特权卡片 (参考设计优化) */
+.membership-container { display: flex; gap: 30px; align-items: flex-start; }
+.dark-membership-card { width: 320px; background-color: #242832; background-image: linear-gradient(139deg, #242832 0%, #251c28 100%); border-radius: 16px; padding: 25px 0; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); }
+.card-title-box { padding: 0 20px; display: flex; flex-direction: column; }
+.main-title { color: #DCC87F; font-weight: 800; font-size: 18px; letter-spacing: 1px; }
+.sub-title { color: #ABAAA5; font-size: 11px; margin-top: 4px; }
+.dark-membership-card .separator { border-top: 1.5px solid #42434a; }
+.benefit-list { list-style: none; padding: 0 15px; display: flex; flex-direction: column; gap: 10px; }
+.benefit-list .element { display: flex; align-items: center; color: #ABAAA5; gap: 12px; padding: 10px 12px; border-radius: 8px; transition: all 0.3s ease-out; cursor: pointer; }
+.benefit-list .element i { font-size: 18px; color: #82B1B7; }
+.benefit-list .element .label { font-size: 13px; font-weight: 600; }
+.benefit-list .element:hover { background-color: #82B1B7; color: #ffffff; transform: translate(3px, -3px); }
+.benefit-list .element:hover i { color: #fff; }
+.benefit-list.special .element { color: #DCC87F; }
+.benefit-list.special .element:hover { background-color: rgba(220, 200, 127, 0.15); color: #DCC87F; }
 
-/* 头像上传美化 */
-.avatar-uploader { border: 1px dashed #d9d9d9; border-radius: 50%; cursor: pointer; width: 100px; height: 100px; overflow: hidden; transition: 0.3s; }
-.avatar-uploader:hover { border-color: #409EFF; }
-.avatar-icon { font-size: 28px; color: #8c939d; line-height: 100px; text-align: center; width: 100px; }
-.avatar-img { width: 100px; height: 100px; object-fit: cover; }
-.save-btn { margin-top: 20px; width: 200px; }
+.membership-stats { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+.stat-item { background: #f9f9f9; padding: 20px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; }
+.s-label { color: #ABAAA5; font-size: 12px; }
+.s-val { font-size: 24px; font-weight: 900; color: #333; }
+.s-val small { font-size: 12px; font-weight: normal; color: #999; margin-left: 5px; }
 
-.old-features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
-.mini-card { padding: 20px; background: #f8f9fb; border-radius: 8px; text-align: center; font-size: 14px; color: #666; }
+/* 其他通用样式 */
+.theme-btn { background-color: #82B1B7 !important; border-color: #82B1B7 !important; font-weight: bold; }
+.danger-btn { background-color: #9B1C31 !important; border-color: #9B1C31 !important; font-weight: bold; }
+.danger-text { color: #9B1C31 !important; font-weight: bold; }
+.custom-avatar-uploader { width: 110px; height: 110px; border: 2px dashed #ABAAA5; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.uploaded-img { width: 100%; height: 100%; object-fit: cover; }
+.pane-fade-in { animation: fadeIn 0.4s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.msg-head-wrapper { display: flex; justify-content: space-between; width: 100%; padding-right: 25px; }
+.msg-t { font-weight: 700; color: #333; }
+.msg-d { font-size: 12px; color: #ABAAA5; }
+.msg-body { background: #f5f7fa; padding: 15px; border-radius: 8px; color: #666; font-size: 14px; }
 </style>

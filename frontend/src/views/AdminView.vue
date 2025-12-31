@@ -27,7 +27,6 @@
             <span slot="title">资源管理</span>
           </template>
           <el-menu-item index="/admin/flights">航班调度</el-menu-item>
-          <!-- 仅平台管理员可见 -->
           <el-menu-item index="/admin/airlines" v-if="isPlatformAdmin">航司列表</el-menu-item>
         </el-submenu>
 

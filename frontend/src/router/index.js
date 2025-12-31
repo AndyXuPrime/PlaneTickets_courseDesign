@@ -63,8 +63,12 @@ const routes = [
         component: () => import('../views/admin/AuditManager.vue'),
         meta: { title: '入驻审核' }
       },
-      // 【新增】消息管理路由
-      // 我注意到你截图里叫 MessagePublish.vue，所以我这里改成了 MessagePublish.vue
+      {
+        path: 'airlines',
+        name: 'AirlineManager',
+        component: () => import('../views/admin/AirlineManager.vue'),
+        meta: { title: '航司管理', role: 'ROLE_PLATFORM_ADMIN' }
+      },
       {
         path: 'messages',
         name: 'MessageManager',
