@@ -206,5 +206,5 @@ A: 本项目是个 Demo，Token 存储在 `localStorage`。请确保 `App.vue` �
 
 **如果这个项目对你有帮助，请给一个 ⭐️ Star！**
 
-<sub>Designed by AndyXuPrime | 2025 课程设计</sub>
+<sub>Designed by AndyXuPrime | 2025-2026 课程设计</sub>
 </div>
