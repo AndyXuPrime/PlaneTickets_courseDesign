@@ -61,27 +61,59 @@
             </el-form>
           </div>
 
-          <!-- 面板 B: 常用乘机人管理 -->
+          <!-- 面板 B: 常用乘机人管理 (已美化) -->
           <div v-if="activeTab === 'family'" class="pane-fade-in">
             <div class="pane-header-flex">
               <div>
                 <h2 class="pane-title">常用乘机人</h2>
                 <p class="sub-text">管理您的亲友信息，购票更便捷</p>
               </div>
-              <el-button type="primary" size="medium" icon="el-icon-plus" class="theme-btn" @click="showFamilyDialog = true">新增乘机人</el-button>
+              <el-button type="primary" size="medium" icon="el-icon-plus" class="theme-btn shadow-btn" @click="showFamilyDialog = true">新增乘机人</el-button>
             </div>
 
-            <el-table :data="familyList" class="custom-table" v-loading="loading" stripe border header-row-class-name="table-header">
-              <el-table-column prop="name" label="姓名" width="140">
+            <!-- 美化后的表格 -->
+            <el-table
+                :data="familyList"
+                class="modern-table"
+                v-loading="loading"
+                :header-cell-style="{background:'#f8f9fb', color:'#606266', fontWeight:'600'}"
+            >
+              <el-table-column label="姓名" width="160">
                 <template slot-scope="scope">
-                  <span class="strong-text">{{ scope.row.name }}</span>
+                  <div class="name-cell">
+                    <div class="name-avatar">{{ scope.row.name ? scope.row.name.charAt(0) : '友' }}</div>
+                    <span class="strong-text">{{ scope.row.name }}</span>
+                  </div>
                 </template>
               </el-table-column>
-              <el-table-column prop="phone" label="联系电话" width="160"></el-table-column>
-              <el-table-column prop="idCard" label="证件号码 (加密)" min-width="200"></el-table-column>
+
+              <el-table-column label="联系电话" width="160">
+                <template slot-scope="scope">
+                  <div class="phone-cell">
+                    <i class="el-icon-mobile-phone"></i> {{ scope.row.phone }}
+                  </div>
+                </template>
+              </el-table-column>
+
+              <el-table-column label="证件号码 (加密)" min-width="240">
+                <template slot-scope="scope">
+                  <div class="id-card-wrapper">
+                    <code class="id-code" :title="scope.row.idCard">{{ scope.row.idCard }}</code>
+                  </div>
+                </template>
+              </el-table-column>
+
               <el-table-column label="操作" width="100" align="center">
                 <template slot-scope="scope">
-                  <el-button type="text" class="danger-link" icon="el-icon-delete" @click="handleDeleteFamily(scope.row.memberId)">删除</el-button>
+                  <el-tooltip content="删除该乘机人" placement="top" effect="dark">
+                    <el-button
+                        class="icon-btn-danger"
+                        icon="el-icon-delete"
+                        circle
+                        size="small"
+                        @click="handleDeleteFamily(scope.row.memberId)">
+                    </el-button>
+                  </el-tooltip>
                 </template>
               </el-table-column>
             </el-table>
@@ -355,16 +387,32 @@ export default {
 .upload-placeholder i { font-size: 24px; display: block; margin-bottom: 4px; }
 .uploaded-img { width: 100%; height: 100%; object-fit: cover; }
 
-/* 按钮 */
+/* 按钮通用 */
 .theme-btn { background-color: #409EFF; border-color: #409EFF; font-weight: 500; padding: 10px 25px; transition: 0.3s; }
 .theme-btn:hover { background-color: #66b1ff; border-color: #66b1ff; transform: translateY(-1px); }
+.shadow-btn { box-shadow: 0 4px 10px rgba(64, 158, 255, 0.3); }
 .danger-btn { padding: 10px 25px; }
-.danger-link { color: #F56C6C; font-size: 13px; }
-.danger-link:hover { text-decoration: underline; }
 
-/* 表格 */
-.custom-table { border-radius: 8px; overflow: hidden; border: 1px solid #ebeef5; }
-.strong-text { font-weight: 600; color: #303133; }
+/* ========== 常用乘机人表格美化 ========== */
+.modern-table { border-radius: 8px; overflow: hidden; }
+.modern-table::before { display: none; /* 去除el-table底部的灰线 */ }
+
+/* 姓名列 */
+.name-cell { display: flex; align-items: center; gap: 12px; }
+.name-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #a0cfff 0%, #409EFF 100%); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; flex-shrink: 0; }
+.strong-text { font-weight: 600; color: #303133; font-size: 14px; }
+
+/* 电话列 */
+.phone-cell { color: #606266; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.phone-cell i { color: #909399; margin-right: 4px; }
+
+/* 证件号列 (代码块样式) */
+.id-card-wrapper { display: flex; align-items: center; }
+.id-code { background-color: #f4f4f5; color: #909399; padding: 4px 8px; border-radius: 4px; font-family: 'Consolas', 'Monaco', monospace; font-size: 12px; border: 1px solid #e9e9eb; display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 操作列按钮 */
+.icon-btn-danger { color: #F56C6C; background-color: #fef0f0; border-color: #fde2e2; transition: all 0.2s; }
+.icon-btn-danger:hover { background-color: #F56C6C; color: #fff; border-color: #F56C6C; box-shadow: 0 2px 8px rgba(245, 108, 108, 0.3); }
 
 /* 消息中心 */
 .empty-state { text-align: center; padding: 60px 0; color: #909399; }
