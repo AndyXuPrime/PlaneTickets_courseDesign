@@ -47,9 +47,7 @@
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item prop="name">
-                <!-- 修改点：显式 label + for -->
                 <label class="input-label" for="reg-name">ADMIN NAME <span class="status-dot"></span></label>
-                <!-- 修改点：显式 id -->
                 <el-input id="reg-name" v-model="form.name" placeholder="真实姓名" class="custom-input"></el-input>
               </el-form-item>
             </el-col>
@@ -66,17 +64,27 @@
             <el-input id="reg-idcard" v-model="form.idCard" placeholder="18位身份证号" class="custom-input"></el-input>
           </el-form-item>
 
+          <!-- 修改部分开始：动态获取航司列表 -->
           <el-form-item prop="airlineCode">
             <label class="input-label" for="reg-airline">AFFILIATED AIRLINE <span class="status-dot"></span></label>
-            <el-select id="reg-airline" v-model="form.airlineCode" placeholder="请选择您所属的航司" style="width: 100%" class="custom-select" popper-class="custom-dropdown">
-              <el-option label="中国国际航空 (CA)" value="CA"></el-option>
-              <el-option label="东方航空 (MU)" value="MU"></el-option>
-              <el-option label="南方航空 (CZ)" value="CZ"></el-option>
-              <el-option label="海南航空 (HU)" value="HU"></el-option>
-              <el-option label="厦门航空 (MF)" value="MF"></el-option>
-              <el-option label="深圳航空 (ZH)" value="ZH"></el-option>
+            <el-select
+                id="reg-airline"
+                v-model="form.airlineCode"
+                placeholder="请选择您所属的航司"
+                style="width: 100%"
+                class="custom-select"
+                popper-class="custom-dropdown"
+                :loading="loadingAirlines"
+            >
+              <el-option
+                  v-for="item in airlineOptions"
+                  :key="item.airlineCode"
+                  :label="`${item.airlineName} (${item.airlineCode})`"
+                  :value="item.airlineCode">
+              </el-option>
             </el-select>
           </el-form-item>
+          <!-- 修改部分结束 -->
 
           <el-form-item prop="password">
             <label class="input-label" for="reg-pass">SECURE PASSWORD <span class="status-dot"></span></label>
@@ -106,9 +114,7 @@
   </div>
 </template>
 
-<!-- Script 和 Style 部分保持完全不变，无需修改 -->
 <script>
-// ... 保持原有代码 ...
 import api from '@/api';
 
 export default {
@@ -116,15 +122,17 @@ export default {
   data() {
     return {
       loading: false,
+      loadingAirlines: false, // 加载航司数据的状态
       errorMessage: '',
+      airlineOptions: [], // 存储从数据库获取的航司列表
       form: {
         name: '',
         phone: '',
         idCard: '',
         password: '',
         airlineCode: '',
-        role: 'ROLE_AIRLINE_ADMIN', // 匹配后端 UserRole 枚举
-        membershipLevel: '普通'      // 【关键修复】匹配后端 MembershipLevel 枚举，通过 @NotNull 校验
+        role: 'ROLE_AIRLINE_ADMIN',
+        membershipLevel: '普通'
       },
       rules: {
         name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
@@ -141,14 +149,31 @@ export default {
       }
     };
   },
+  // 页面创建时自动获取航司列表
+  created() {
+    this.fetchAirlines();
+  },
   methods: {
+    async fetchAirlines() {
+      this.loadingAirlines = true;
+      try {
+        // 调用后端接口获取真实数据
+        const res = await api.getAllAirlines();
+        if (res.code === 200) {
+          this.airlineOptions = res.data;
+        }
+      } catch (error) {
+        this.errorMessage = '无法加载航司列表，请检查网络或联系管理员';
+      } finally {
+        this.loadingAirlines = false;
+      }
+    },
     handleRegister() {
       this.$refs.regForm.validate(async (valid) => {
         if (!valid) return;
         this.loading = true;
         this.errorMessage = '';
         try {
-          // 确保发送的是完整的 form 数据
           const res = await api.register(this.form);
           if (res.code === 200) {
             this.$alert('申请提交成功！请等待平台管理员审核。', '提交成功', {
@@ -158,7 +183,6 @@ export default {
           }
         } catch (error) {
           if (error.response && error.response.data) {
-            // 显示后端返回的校验错误信息
             this.errorMessage = error.response.data.message || '申请失败，请检查填写内容';
           } else {
             this.errorMessage = '网络繁忙，请稍后再试';
@@ -171,8 +195,9 @@ export default {
   }
 };
 </script>
+
 <style scoped>
-/* ... 保持原有样式代码不变 ... */
+/* 你的原有样式代码保持不变，完全兼容 */
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@500;700&display=swap');
 
 :root {

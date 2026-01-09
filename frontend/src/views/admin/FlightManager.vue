@@ -190,12 +190,13 @@ export default {
           this.fetchFlights();
         }
       }).catch(() => {
-        // === 【关键修复】加上这个 catch 块 ===
         this.$message.info('已取消修改');
       });
     },
     handleCancel(row) {
-      this.$confirm(`确定取消航班 ${row.flightNumber} 吗？`, '提示', { type: 'warning' });
+      this.$confirm(`确定取消航班 ${row.flightNumber} 吗？`, '提示', { type: 'warning' }).catch(() => {
+        this.$message.info('已取消修改');
+      });
     },
     resetForm() { this.$refs.flightForm.resetFields(); }
   }

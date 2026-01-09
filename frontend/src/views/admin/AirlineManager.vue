@@ -16,7 +16,6 @@
               <div slot="error" class="image-slot">
                 <i class="el-icon-picture-outline"></i>
               </div>
-              <!-- 正在加载时的占位 -->
               <div slot="placeholder" class="image-slot">
                 <i class="el-icon-loading"></i>
               </div>
@@ -24,8 +23,11 @@
           </template>
         </el-table-column>
 
-        <!-- 其他列保持不变 -->
-        <el-table-column prop="airlineCode" label="代码" width="80" align="center"></el-table-column>
+        <el-table-column prop="airlineCode" label="代码" width="80" align="center">
+          <template slot-scope="scope">
+            <el-tag effect="plain">{{ scope.row.airlineCode }}</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="airlineName" label="航司名称" min-width="150"></el-table-column>
         <el-table-column prop="country" label="国家" width="120"></el-table-column>
         <el-table-column prop="contactPhone" label="联系电话" width="150"></el-table-column>
@@ -43,23 +45,56 @@
         </el-table-column>
       </el-table>
     </el-card>
+
+    <!-- 新增弹窗 -->
+    <el-dialog title="入驻新航司" :visible.sync="showAddDialog" width="500px" :close-on-click-modal="false">
+      <el-form :model="form" label-width="100px" ref="addForm">
+        <el-form-item label="二字码" required>
+          <el-input v-model="form.airlineCode" placeholder="如: CA, MU" maxlength="2" show-word-limit></el-input>
+        </el-form-item>
+        <el-form-item label="航司名称" required>
+          <el-input v-model="form.airlineName" placeholder="如: 中国国际航空"></el-input>
+        </el-form-item>
+        <el-form-item label="国家">
+          <el-input v-model="form.country" placeholder="默认为中国"></el-input>
+        </el-form-item>
+        <el-form-item label="联系电话">
+          <el-input v-model="form.contactPhone"></el-input>
+        </el-form-item>
+        <el-form-item label="官网">
+          <el-input v-model="form.website" placeholder="www.example.com"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer">
+        <el-button @click="showAddDialog = false">取消</el-button>
+        <el-button type="primary" @click="submitAdd" :loading="submitting">确认入驻</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 import api from '@/api';
+
 export default {
   data() {
     return {
       airlines: [],
       loading: false,
       showAddDialog: false,
+      submitting: false,
+      form: {
+        airlineCode: '',
+        airlineName: '',
+        country: '中国',
+        contactPhone: '',
+        website: ''
+      },
       uploadHeaders: { Authorization: 'Bearer ' + localStorage.getItem('authToken') }
     };
   },
   created() { this.fetchAirlines(); },
   methods: {
-    // 【新增】校验 URL 是否有效
     isValidUrl(url) {
       return url && url !== 'null' && url !== '';
     },
@@ -77,6 +112,32 @@ export default {
         row.logoUrl = newLogoUrl;
         this.$message.success('Logo 更新成功');
       }
+    },
+    async submitAdd() {
+      // 1. 基础校验
+      if (!this.form.airlineCode || !this.form.airlineName) {
+        return this.$message.warning('请填写二字码和航司名称');
+      }
+
+      this.submitting = true;
+      try {
+        // 2. 调用 API (确保 api/index.js 中有 createAirline)
+        const res = await api.createAirline(this.form);
+
+        if (res.code === 200) {
+          this.$message.success('航司入驻成功');
+          this.showAddDialog = false;
+          this.fetchAirlines(); // 刷新列表
+          // 重置表单
+          this.form = { airlineCode: '', airlineName: '', country: '中国', contactPhone: '', website: '' };
+        }
+      } catch (e) {
+        // 3. 错误处理 (如果后端返回 400/403，这里会捕获)
+        console.error(e);
+        // 注意：这里不需要手动设置 errorMessage，因为 axios 拦截器通常会弹出 Message.error
+      } finally {
+        this.submitting = false;
+      }
     }
   }
 };
@@ -92,6 +153,6 @@ export default {
   height: 100%;
   background: #f5f7fa;
   color: #909399;
-  font-size: 24px;
+  font-size: 20px;
 }
 </style>

@@ -85,7 +85,6 @@
           </el-button>
         </el-form>
 
-        <!-- 管理员特有动作链接 -->
         <div class="admin-action-links">
           <span>ACCESS RESTRICTED?</span>
           <router-link to="/admin-register" class="register-link">
@@ -93,7 +92,6 @@
           </router-link>
         </div>
 
-        <!-- 返回链接 -->
         <div class="footer-links">
           <router-link to="/">
             <i class="el-icon-caret-left"></i> RETURN TO PASSENGER VIEW
@@ -104,9 +102,7 @@
   </div>
 </template>
 
-<!-- Script 和 Style 部分保持完全不变，无需修改 -->
 <script>
-// ... 保持原有代码 ...
 import api from '@/api';
 import { mutations } from '@/store';
 
