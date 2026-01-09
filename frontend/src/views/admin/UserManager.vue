@@ -89,7 +89,7 @@ export default {
         this.$message.success(`用户 ${row.name} 的等级已更新`);
       } catch (e) {
         this.$message.error('更新失败');
-        this.fetchUsers(); // 回滚状态
+        this.fetchUsers(); // 回滚
       }
     },
     resetPwd(row) {

@@ -44,6 +44,7 @@ export default {
     getAllAirlines: () => apiClient.get('/api/airlines'),
     updateAirlineLogo: (code, url) => apiClient.put(`/api/airlines/${code}/logo?logoUrl=${url}`),
     // 添加发布航班接口
+    createAirline: (data) => apiClient.post('/api/airlines', data),
     createFlight: (data) => apiClient.post('/api/flights', data),
     uploadFile: (formData) => apiClient.post('/api/files/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }

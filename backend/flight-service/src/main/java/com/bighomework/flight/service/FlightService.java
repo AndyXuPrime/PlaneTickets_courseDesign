@@ -9,6 +9,8 @@ import com.bighomework.common.dto.responseDTO.FlightSearchVO;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.bighomework.flight.entity.Airline;
+
 public interface FlightService {
     List<FlightSearchVO> searchAvailableFlights(String searchType, String value, LocalDate date);
     List<FlightSearchVO> findAllAvailableFlights(LocalDate date);
@@ -21,4 +23,5 @@ public interface FlightService {
     void clearFlightCache();
 
     void saveFlight(FlightRequest request);
+    void addAirline(Airline airline);
 }
