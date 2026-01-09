@@ -1,210 +1,239 @@
-# ✈️ PlaneTickets_courseDesign | 蓝天航空机票预订系统
+# ✈️ 蓝天航空 (BlueSky Airlines) | 分布式机票预订系统
 
-<div align="center">
+[![Java](https://img.shields.io/badge/Java-17+-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/)
+[![Spring Cloud Alibaba](https://img.shields.io/badge/Spring%20Cloud%20Alibaba-2023.0.1-blue?style=for-the-badge&logo=spring&logoColor=white)](https://spring.io/projects/spring-cloud-alibaba)
+[![Vue.js](https://img.shields.io/badge/Vue.js-2.7-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white)](https://vuejs.org/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![Redis](https://img.shields.io/badge/Redis-7.0-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
+[![MinIO](https://img.shields.io/badge/MinIO-Object%20Storage-C72C48?style=for-the-badge&logo=minio&logoColor=white)](https://min.io/)
 
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.0-brightgreen?style=for-the-badge&logo=springboot)
-![Spring Security](https://img.shields.io/badge/Spring%20Security-6.x-6DB33F?style=for-the-badge&logo=springsecurity)
-![Vue](https://img.shields.io/badge/Vue.js-2.6-4FC08D?style=for-the-badge&logo=vue.js)
-![Element UI](https://img.shields.io/badge/Element%20UI-2.15-409EFF?style=for-the-badge&logo=element)
-![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql)
-![JWT](https://img.shields.io/badge/JWT-Auth-000000?style=for-the-badge&logo=jsonwebtokens)
-
-<p>🎓 一个基于 Spring Boot 3 + Vue 2 的前后端分离架构机票预订系统课程设计</p>
-<p>实现了从航班查询、动态定价、在线选座、订单支付到退改签的全流程业务闭环。</p>
-
-</div>
+> 一个基于 **Spring Cloud Alibaba** 微服务架构的现代化机票预订平台。系统采用前后端分离设计，融合了 **结构主义** 与 **复古未来** 的视觉风格，实现了从航班查询、动态定价、一单多票预订到后台数据可视化的完整业务闭环。
 
 ---
 
-## 📖 项目概述
+## ✨ 核心特性
 
-本项目模拟了真实的航空公司票务系统，旨在解决高并发下的机票预订问题。系统分为**客户端（C端）**和**管理端（B端）**。
+### 🧑‍✈️ 用户端 (Client Side)
+- **🚀 极速航班查询** - 集成 **Redis** 缓存，热点航线查询毫秒级响应。
+- **🎫 一单多票预订** - 支持一次性为本人及多位常用乘机人购票，智能解析身份信息。
+- **💰 动态定价引擎** - 基于舱位、时间、库存因子的实时票价计算策略。
+- **🛡️ 全链路安全** - 密码 **BCrypt** 加密，身份证号 **AES** 对称加密存储。
+- **☁️ 个人中心** - 集成 **MinIO** 对象存储，支持头像上传与回显；管理常用乘机人。
 
-*   **客户端**：为旅客提供流畅的购票体验，支持多维度航班搜索、会员差异化定价、订单管理等功能。
-*   **管理端**：为运营人员提供航班调度、票务管理、销售数据分析看板等功能。
-
-### 核心亮点
-*   🔥 **无状态认证**：基于 Spring Security + JWT 实现安全的身份验证与鉴权。
-*   💰 **动态定价引擎**：根据舱位剩余、距离起飞时间、会员等级自动计算最优票价（策略模式实现）。
-*   🔒 **并发安全**：使用数据库悲观锁（`@Lock(LockModeType.PESSIMISTIC_WRITE)`）解决高并发下的超卖问题。
-*   📊 **数据可视化**：通过 JPQL 聚合查询实现多维度的销售报表统计。
+### 👨‍💻 管理端 (Admin Side)
+- **📊 数据仪表盘** - 集成 **ECharts**，实时展示营收趋势、订单量及会员分布（双Y轴结构主义图表）。
+- **🔐 RBAC 权限控制** - 平台管理员与航司管理员权限隔离，数据互不可见。
+- **📢 系统广播** - 管理员发布全员通知，前端实时接收。
+- **✈️ 航班调度** - 航班增删改查，修改票价自动清除 Redis 缓存。
+- **📝 审计日志** - 订单核销、退票等关键操作全流程记录。
 
 ---
 
 ## 🏗️ 系统架构
 
-### 1. 技术选型
-
-| 模块 | 技术/工具 | 版本 | 说明 |
-| :--- | :--- | :--- | :--- |
-| **后端** | Spring Boot | 3.3.0 | 核心容器与MVC框架 |
-| | Spring Security | 6.x | 安全认证与授权 |
-| | Spring Data JPA | - | ORM 持久层框架 |
-| | JWT (jjwt) | 0.11.5 | Token 生成与解析 |
-| | Lombok | - | 代码简化工具 |
-| **前端** | Vue.js | 2.6.14 | 渐进式前端框架 |
-| | Vue Router | 3.5.x | 前端路由管理 |
-| | Element UI | 2.15.x | 桌面端组件库 |
-| | Axios | 0.2x | HTTP 客户端 |
-| **数据** | MySQL | 8.0+ | 关系型数据库 |
-
-
----
-### 2. 后端代码结构
-
-后端代码位于 `backend/Regular_customer_service` 目录下，遵循标准的 Maven 项目结构。
-
-```text
-backend/
-└── Regular_customer_service/    # 后端项目根目录
-    ├── pom.xml                  # Maven 依赖配置
-    └── src/
-        └── main/
-            ├── resources/       # 配置文件 (application.properties, SQL脚本等)
-            └── java/
-                └── com/
-                    └── bighomework/
-                        └── planeTicketWeb/
-                            ├── PlaneTicketWebApplication.java  # [启动类] Spring Boot入口
-                            │
-                            ├── config/                         # [配置层] SecurityConfig, CORS配置
-                            ├── controller/                     # [控制层] 处理HTTP请求 (FlightController, BookingController等)
-                            ├── dto/                            # [数据传输对象] requestDTO, responseDTO
-                            ├── entity/                         # [实体层] 与数据库表对应的实体类 (Ticket, Flight等)
-                            ├── enums/                          # [枚举] 状态、舱位等级等枚举定义
-                            ├── exception/                      # [异常处理] 全局异常捕获与自定义异常
-                            ├── repository/                     # [持久层] Spring Data JPA 接口
-                            ├── security/                       # [安全组件] JWT过滤器、用户认证逻辑
-                            ├── service/                        # [业务层] 核心业务逻辑接口与实现
-                            └── util/                           # [工具类] 通用工具 (ApiResponse等)
-```
-
-### 3. 前端代码结构
-
-前端代码位于 `frontend` 目录下，基于 Vue CLI 构建。
-
-```text
-frontend/
-├── package.json                # 项目依赖与脚本配置
-├── vue.config.js               # Vue CLI 配置文件 (代理、端口等)
-└── src/
-    ├── main.js                 # [入口文件] 初始化Vue实例、引入Element UI等
-    ├── App.vue                 # [根组件] 页面主入口
-    │
-    ├── api/                    # [API层] Axios封装与后端接口调用方法
-    ├── assets/                 # [静态资源] 图片、全局CSS样式
-    ├── components/             # [组件层] 可复用的UI组件 (FlightList, OrderCard等)
-    ├── router/                 # [路由层] 页面路由配置与权限守卫
-    ├── store/                  # [状态管理] 简易的状态存储 (User, Token)
-    └── views/                  # [视图层] 各个功能页面的完整视图 (HomeView, MyOrdersView等)
-```
-
----
-## ✨ 功能模块详解
-
-### ✈️ 航班业务 (Flight Service)
-*   **多模式搜索**：支持按“出发地-目的地-日期”搜索，或按“航班号”精确/模糊搜索。
-*   **航班动态**：实时查询航班状态（计划/延误/取消），无需登录即可访问。
-*   **数据联查**：使用 `JOIN FETCH` 优化 JPA 查询，避免 N+1 问题。
-
-### 🎫 订票与订单 (Booking Service)
-*   **创建订单**：
-    *   校验航班余票（数据库锁）。
-    *   调用 `PricingStrategy` 计算基准价格。
-    *   应用会员折扣（普通/银卡/金卡/白金）。
-    *   批量生成 `Ticket` 记录（原子性事务）。
-*   **我的行程**：
-    *   逻辑聚合：将同一时间预订的多张机票聚合为一个“逻辑订单”展示。
-    *   状态追踪：显示待支付、已支付、已出行等状态。
-*   **在线退票**：
-    *   规则校验：检查是否起飞前、是否已支付。
-    *   状态更新：更新 `tickets` 表状态，触发日志记录。
-
-### 🛡️ 管理员后台 (Admin Dashboard)
-*   **航班维护**：对 `flights` 表进行 CRUD 操作。
-*   **销售报表**：
-    *   按航线/航司统计销售额（JPQL 聚合查询）。
-    *   客户画像分析（性别/年龄分布）。
-*   **权限控制**：基于 `@PreAuthorize("hasRole('ADMIN')")` 的细粒度方法级安全控制。
-
----
-
-## 💾 数据库设计 (Schema)
-
-数据库名：`planetickets`
-
-### 核心表关系图
+### 微服务架构图
 
 ```mermaid
-erDiagram
-    AIRLINES ||--o{ FLIGHTS : owns
-    FLIGHTS ||--o{ TICKETS : has
-    CUSTOMERS ||--o{ TICKETS : books
-    TICKETS ||--o{ TICKET_STATUS_LOG : logs
+graph TB
+    subgraph "前端层 (Frontend)"
+        A[Vue 2 + Element UI<br/>Axios + ECharts]
+    end
+
+    subgraph "网关层 (Gateway :8080)"
+        B[Spring Cloud Gateway<br/>统一鉴权 / 动态路由 / 跨域处理]
+    end
+
+    subgraph "核心服务层 (Microservices)"
+        C[Auth Service :8081<br/>认证与用户中心]
+        D[Flight Service :8082<br/>航班与资源管理]
+        E[Order Service :8083<br/>交易与票务中心]
+        F[Admin Service :8084<br/>报表与统计聚合]
+    end
+
+    subgraph "基础设施与数据层 (Infrastructure)"
+        G[Nacos<br/>注册与配置中心]
+        H[MySQL 8.0<br/>业务数据]
+        I[Redis<br/>热点缓存]
+        J[MinIO<br/>对象存储]
+    end
+
+    A -->|HTTPS/JSON| B
+    B -->|LoadBalance| C
+    B -->|LoadBalance| D
+    B -->|LoadBalance| E
+    B -->|LoadBalance| F
+    
+    C & D & E & F -->|Register/Config| G
+    C & D & E & F -->|Persist| H
+    D -->|Cache| I
+    D & C -->|Upload| J
+    
+    E -.->|Feign Call| C
+    E -.->|Feign Call| D
+    F -.->|Read-Only| H
 ```
 
-### 关键表结构说明
+### 核心业务流程：机票预订
 
-1.  **`flights` (航班表)**：包含 `economy_seats`, `business_seats` (库存), `base_price` (基准价)。
-2.  **`tickets` (机票表)**：本系统去除了冗余的 `orders` 表，直接使用 `tickets` 表记录每张票的信息。通过 `booking_time` 和 `flight_number` 在业务层逻辑聚合为“订单”。
-3.  **`customers` (用户表)**：存储用户认证信息及 `membership_level` (会员等级)。
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant G as Gateway
+    participant O as Order Service
+    participant A as Auth Service
+    participant F as Flight Service
+    participant DB as MySQL
 
-*(详细 SQL 建表语句请参考项目根目录下的 `sql/init.sql` 或上文数据库设计章节)*
+    U->>G: 提交订单 (PassengerIDs, FlightNo)
+    G->>G: JWT 鉴权 & 解析 UserID
+    G->>O: 转发请求 (X-User-Name)
+    O->>A: Feign: 获取乘机人详细信息
+    A-->>O: 返回姓名/身份证
+    O->>F: Feign: 获取航班实时价格
+    F-->>O: 返回 Price & Stock
+    O->>O: 计算总价 & 构建订单实体
+    O->>DB: 写入 Tickets 表 (Status: PAID)
+    O->>DB: 扣减库存 (逻辑预留)
+    DB-->>O: 成功
+    O-->>U: 返回订单详情
+```
+
+---
+
+## 🛠️ 技术栈
+
+### 后端 (Backend)
+
+| 组件 | 版本 | 说明 |
+| :--- | :--- | :--- |
+| **Spring Boot** | 3.2.5 | 核心框架 |
+| **Spring Cloud Alibaba** | 2023.0.1.0 | 微服务全家桶 |
+| **Nacos** | 2.3.2 | 服务注册与配置中心 |
+| **OpenFeign** | 4.x | 声明式服务调用 |
+| **Gateway** | 4.x | 响应式网关 (WebFlux) |
+| **Spring Data JPA** | 3.x | ORM 框架 |
+| **MinIO SDK** | 8.5 | 对象存储客户端 |
+
+### 前端 (Frontend)
+
+| 组件 | 版本 | 说明 |
+| :--- | :--- | :--- |
+| **Vue.js** | 2.7 | 渐进式 JavaScript 框架 |
+| **Element UI** | 2.15 | 桌面端组件库 (深度定制样式) |
+| **Axios** | 1.6 | HTTP 客户端 |
+| **ECharts** | 5.5 | 数据可视化库 |
+| **Vue Router** | 3.6 | 路由管理 |
 
 ---
 
 ## 🚀 快速开始
 
-### 1. 前置准备
-*   JDK 17+
-*   Node.js 16+
-*   MySQL 8.0+
+### 1. 环境准备
+*   **JDK**: 17+
+*   **Maven**: 3.8+
+*   **Node.js**: 16+
+*   **MySQL**: 8.0
+*   **Redis**: 7.x
+*   **Nacos**: 2.x (Standalone)
+*   **MinIO**: RELEASE.2023+
 
-### 2. 数据库初始化
-在 MySQL 中执行建表脚本，并导入初始数据（航空公司、航班、测试用户）。
-
-### 3. 后端启动
-修改 `src/main/resources/application.properties`：
-```properties
-spring.datasource.username=root
-spring.datasource.password=你的密码
-# JWT 密钥 (生产环境请修改)
-app.jwt.secret=YourSecretKey...
-```
-在 `backend` 目录下运行：
+### 2. 基础设施启动
 ```bash
-mvn clean spring-boot:run
+# 1. 启动 Nacos
+startup.cmd -m standalone
+
+# 2. 启动 Redis
+redis-server.exe
+
+# 3. 启动 MinIO (访问 :9001 创建 bucket 'avatars')
+minio.exe server D:\data --console-address ":9001"
 ```
 
+### 3. 后端微服务启动
+> **⚠️ 注意**：启动前请确保 Nacos 配置列表已导入所有服务的 `yaml` 文件。
+
+```bash
+# 1. 安装公共依赖 (必须步骤！)
+mvn clean install -DskipTests
+
+# 2. 启动微服务 (推荐顺序: Auth -> Flight -> Order -> Admin -> Gateway)
+# 可在 IDE 中批量启动，或在各子模块下执行:
+mvn spring-boot:run
+```
 ### 4. 前端启动
-在 `frontend` 目录下运行：
 ```bash
-# 安装依赖 (已解决 async-validator 兼容问题)
+cd frontend
 npm install
-
-# 启动开发服务器
 npm run serve
+# 访问 http://localhost:8085
 ```
-访问 `http://localhost:8081` 即可体验。
 
 ---
 
-## ❓ 常见问题 (FAQ)
+## 📁 项目结构
 
-**Q: 为什么注册时提示“服务内部错误”但控制台没有 SQL 日志？**
-A: 这通常是 Spring Validation 在 Controller 层拦截了请求。请检查前端发送的 JSON 数据（如 `password` 长度、`phone` 格式）是否符合 DTO 中的 `@Valid` 规则。
-
-**Q: 后端报错 `NullPointerException` 在 Service 层？**
-A: 请检查是否使用了 Lombok 的 `@RequiredArgsConstructor` 但 IDE 没有安装 Lombok 插件，导致依赖注入失败。建议使用 IDEA 或手动编写构造函数。
-
-**Q: 前端登录后刷新页面状态丢失？**
-A: 本项目是个 Demo，Token 存储在 `localStorage`。请确保 `App.vue` 或 `store/index.js` 中有从本地存储恢复状态的逻辑。
+```text
+plane-ticket-cloud/
+├── common-module/          # [公共模块] DTO, Enums, Utils, Feign接口
+├── gateway-service/        # [网关服务] :8080 | 鉴权, 路由, 限流
+├── auth-service/           # [认证服务] :8081 | 用户, 权限, 乘机人
+├── flight-service/         # [航班服务] :8082 | 航班, 航司, 定价, 文件
+├── order-service/          # [订单服务] :8083 | 交易, 订单, 审计
+├── admin-service/          # [后台服务] :8084 | 统计, 报表, 广播
+└── frontend/               # [前端项目] Vue CLI, Element UI
+```
 
 ---
+
+## 🗄️ 数据库设计 (核心表)
+
+*   **`users`**: 存储用户信息、角色 (`ROLE_USER`, `ROLE_ADMIN`)、加密后的身份证号。
+*   **`flights`**: 航班基础信息，关联 `airlines`。
+*   **`daily_flight_stock`**: **(核心设计)** 每日航班库存表，解耦查询与交易。
+*   **`tickets`**: 订单/机票表，记录乘客快照信息。
+*   **`ticket_status_log`**: 订单状态流转审计日志（预订->支付->核销/退票）。
+
+---
+
+## 🐛 技术攻坚与踩坑记录
+
+在微服务重构过程中，我们解决了以下关键技术难题：
+
+1.  **Maven 依赖地狱**：
+    *   *问题*：子服务找不到 `common-module` 类。
+    *   *解决*：建立 `mvn clean install` 标准规范，确保本地仓库版本一致。
+2.  **跨服务鉴权死锁 (403 Loop)**：
+    *   *问题*：Order 服务调用 Auth 服务获取用户信息时被拦截。
+    *   *解决*：在 Auth 服务中开辟 `/internal/**` 白名单接口，仅供 Feign 内部调用。
+3.  **网关 CORS 与 WebFlux 冲突**：
+    *   *问题*：前端跨域报错，且 Gateway 启动失败。
+    *   *解决*：移除 Servlet 依赖，使用 `AuthGlobalFilter` (Reactive) 替代传统 Filter；配置 `allowedOriginPatterns: "*"`。
+4.  **Jackson 无限递归序列化**：
+    *   *问题*：`Flight` 与 `Airline` 双向关联导致 StackOverflow。
+    *   *解决*：使用 `@JsonIgnoreProperties` 切断序列化链路。
+5.  **数据一致性与防崩设计**：
+    *   *策略*：在 `TicketServiceImpl` 中加入大量 `Optional` 判空保护，确保即使某个微服务返回数据异常，主流程也能兜底运行（如显示“未知航司”而非报错）。
+
+---
+
+## 🎨 界面展示
+
+> *注：以下为设计概念描述*
+
+1.  **管理员**：采用结构主义风格，深灰边框配合实色阴影，高对比度数据展示。
+2.  **航班搜索**：极简设计，支持模糊搜索，结果页秒级加载。
+3.  **个人中心**：卡片式布局，会员权益动态光效展示。
+
+---
+
+## 📞 联系与致谢
+
+*   **开发者**: AndyXuPrime
+*   **版本**: V 1.0.0 (Microservices Edition)
+*   **致谢**: 感谢 Spring Cloud Alibaba 社区提供的强大中间件支持。
 
 <div align="center">
+    <strong>Designed with ❤️ for High Concurrency & Scalability</strong>
 
-**如果这个项目对你有帮助，请给一个 ⭐️ Star！**
-
-<sub>Designed by AndyXuPrime | 2025-2026 课程设计</sub>
+**如果这个项目对你有帮助，请给我们一个 ⭐️**
 </div>
