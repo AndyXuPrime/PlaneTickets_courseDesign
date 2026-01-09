@@ -25,35 +25,32 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
             "/api/auth/login",
             "/api/auth/register",
             "/api/flights/search",
-            "/api/flights/all"
+            "/api/flights/all",
+            "/api/airlines"
     };
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
 
-        // 【新增】1. 跨域预检请求(OPTIONS)直接放行，否则前端会报CORS错误
         if (exchange.getRequest().getMethod() == HttpMethod.OPTIONS) {
             return chain.filter(exchange);
         }
 
         log.info("Gateway拦截请求: {}", path);
 
-        // 2. 白名单放行
         for (String whitePath : WHITE_LIST) {
             if (path.startsWith(whitePath)) {
                 return chain.filter(exchange);
             }
         }
 
-        // 3. 获取 Token
         String token = null;
         String bearerToken = exchange.getRequest().getHeaders().getFirst("Authorization");
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             token = bearerToken.substring(7);
         }
 
-        // 4. 校验 Token 是否存在
         if (token == null) {
             log.warn("请求未携带Token: {}", path);
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
@@ -61,16 +58,14 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
         }
 
         try {
-            // 5. 校验 Token 合法性
             if (jwtTokenProvider.validateToken(token)) {
                 String username = jwtTokenProvider.getUsernameFromJWT(token);
-                // 确保 common-module 里有这两个方法
+
                 String role = jwtTokenProvider.getRoleFromJWT(token);
                 String airlineCode = jwtTokenProvider.getAirlineCodeFromJWT(token);
 
                 log.info("Token校验通过，用户: {}, 角色: {}, 航司: {}", username, role, airlineCode);
 
-                // 6. 传递用户信息给下游
                 ServerHttpRequest request = exchange.getRequest().mutate()
                         .header("X-User-Name", username)
                         .header("X-User-Role", role != null ? role : "")
@@ -82,8 +77,6 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
         } catch (Exception e) {
             log.error("Token校验异常: {}", e.getMessage());
         }
-
-        // 7. 校验失败
         log.warn("Token无效或已过期: {}", path);
         exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
         return exchange.getResponse().setComplete();

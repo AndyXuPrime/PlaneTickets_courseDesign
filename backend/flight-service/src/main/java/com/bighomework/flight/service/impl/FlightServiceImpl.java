@@ -65,7 +65,6 @@ public class FlightServiceImpl implements FlightService {
         FlightSearchVO vo = new FlightSearchVO();
         vo.setFlightNumber(flight.getFlightNumber());
 
-        // 1. 航司及基础信息保护
         String airlineName = (flight.getAirline() != null && flight.getAirline().getAirlineName() != null)
                 ? flight.getAirline().getAirlineName() : "未知航司";
         vo.setAirlineName(airlineName);
@@ -79,9 +78,7 @@ public class FlightServiceImpl implements FlightService {
         vo.setDepartureTime(flight.getDepartureTime());
         vo.setArrivalTime(flight.getArrivalTime());
 
-        // 2. 动态定价与库存逻辑
         try {
-            // 默认已售座位为0，后期可对接 order-service 获取真实销量
             BigDecimal ecoPrice = pricingStrategy.calculatePrice(flight, date, CabinClass.经济舱, 0);
             BigDecimal busPrice = pricingStrategy.calculatePrice(flight, date, CabinClass.商务舱, 0);
 
@@ -163,5 +160,21 @@ public class FlightServiceImpl implements FlightService {
         flight.setAirline(airline);
 
         flightRepository.save(flight);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = "flight_search", allEntries = true)
+    public void addAirline(Airline airline) {
+        if (airlineRepository.existsById(airline.getAirlineCode())) {
+            throw new BusinessException("该航司二字码 (" + airline.getAirlineCode() + ") 已存在");
+        }
+
+        if (airline.getAirlineName() == null || airline.getAirlineName().isEmpty()) {
+            throw new BusinessException("航司名称不能为空");
+        }
+
+        airlineRepository.save(airline);
+        log.info("新增航空公司成功: {} - {}", airline.getAirlineCode(), airline.getAirlineName());
     }
 }
