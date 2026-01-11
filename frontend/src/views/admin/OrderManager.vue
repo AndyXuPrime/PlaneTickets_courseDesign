@@ -126,7 +126,7 @@ export default {
     },
     formatTime(time) {
       if (!time) return '';
-      return new Date(time).toLocaleString();
+      return time;
     }
   }
 };
