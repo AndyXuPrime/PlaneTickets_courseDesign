@@ -75,7 +75,6 @@ export default {
       loading: false,
       statusMap: { '已支付': 'success', '已使用': 'info', '已取消': 'danger', '已预订': 'warning' },
 
-      // 日志相关
       logVisible: false,
       currentLogs: []
     };
@@ -126,7 +125,19 @@ export default {
     },
     formatTime(time) {
       if (!time) return '';
-      return time;
+
+      // 判断是否为数组格式 [2026, 1, 9, 19, 50, 50]
+      if (Array.isArray(time)) {
+        const year = time[0];
+        const month = time[1].toString().padStart(2, '0');
+        const day = time[2].toString().padStart(2, '0');
+        const hour = (time[3] || 0).toString().padStart(2, '0');
+        const minute = (time[4] || 0).toString().padStart(2, '0');
+        const second = (time[5] || 0).toString().padStart(2, '0');
+        return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+      }
+
+      return new Date(time).toLocaleString();
     }
   }
 };
