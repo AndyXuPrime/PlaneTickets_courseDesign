@@ -1,6 +1,5 @@
 <template>
   <div class="home-container">
-    <!-- 搜索区域：背景图 + 悬浮表单 -->
     <div class="search-hero">
       <div class="search-box-card">
         <el-tabs v-model="searchMode" type="card" class="mode-tabs">
@@ -197,7 +196,7 @@ export default {
 }
 .state-box i { font-size: 40px; margin-bottom: 15px; }
 
-/* 搜索按钮全局美化（通过深度选择器） */
+/* 搜索按钮 */
 ::v-deep .search-btn {
   background: linear-gradient(90deg, #ff9800, #f57c00) !important;
   border: none !important;

@@ -1,12 +1,12 @@
 <template>
   <form @submit.prevent="submitSearch" class="search-form">
     <div class="form-group">
-      <label for="departure">出发城市</label>
+      <label for="departure">出发城市机场</label>
       <el-input id="departure" v-model.trim="form.departureAirport" placeholder="例如: 北京" clearable></el-input>
     </div>
 
     <div class="form-group">
-      <label for="arrival">到达城市</label>
+      <label for="arrival">到达城市机场</label>
       <el-input id="arrival" v-model.trim="form.arrivalAirport" placeholder="例如: 上海" clearable></el-input>
     </div>
 
