@@ -126,7 +126,6 @@ export default {
     formatTime(time) {
       if (!time) return '';
 
-      // 判断是否为数组格式 [2026, 1, 9, 19, 50, 50]
       if (Array.isArray(time)) {
         const year = time[0];
         const month = time[1].toString().padStart(2, '0');
