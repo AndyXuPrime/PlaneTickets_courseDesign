@@ -12,26 +12,6 @@
 
 > 当前仓库以代码为准：`backend` 根 `pom.xml` 聚合了 `common-module`、`auth-service`、`flight-service`、`order-service`、`gateway-service`；`admin-service` 在当前版本中可单独构建和启动。
 
----
-
-## 真实访问入口（先看这里）
-
-项目启动完成后，真实页面入口是前端开发服务 `8085`，不是 Gateway 的 `8080`：
-
-- 用户端：`http://localhost:8085`
-- 管理端：`http://localhost:8085/admin`
-
-`http://localhost:8080` 是 API 网关地址，只负责转发 `/api/**` 请求；直接打开 Gateway 根路径出现 404 属于正常现象。
-
-常用本地地址如下：
-
-| 入口 | 地址 | 说明 |
-| --- | --- | --- |
-| 用户端 | `http://localhost:8085` | 机票查询、预订、我的行程、个人中心 |
-| 管理端 | `http://localhost:8085/admin` | 管理员登录后的航班、订单、用户、统计与广播管理 |
-| API 网关 | `http://localhost:8080` | 仅用于转发 `/api/**` 请求，没有首页页面；直接访问根路径出现 404 是正常现象 |
-| Nacos 控制台 | `http://localhost:8848/nacos` | 注册中心与配置中心，默认账号/密码通常为 `nacos/nacos` |
-| MinIO 控制台 | `http://localhost:9001` | 对象存储管理，默认本地凭证通常为 `minioadmin/minioadmin` |
 
 ---
 
@@ -335,6 +315,27 @@ http://localhost:8085
 用户端访问 `http://localhost:8085`，管理端访问 `http://localhost:8085/admin`。
 
 API 统一请求 `http://localhost:8080`，由 Gateway 转发到后端服务。Gateway 根路径 `/` 没有页面路由，直接访问 `http://localhost:8080` 出现 404 属于正常现象。
+
+---
+
+## 访问入口
+
+项目启动完成后，真实页面入口是前端开发服务 `8085`，不是 Gateway 的 `8080`：
+
+- 用户端：`http://localhost:8085`
+- 管理端：`http://localhost:8085/admin`
+
+`http://localhost:8080` 是 API 网关地址，只负责转发 `/api/**` 请求；直接打开 Gateway 根路径会出现 404 现象。
+
+常用本地地址如下：
+
+| 入口 | 地址 | 说明 |
+| --- | --- | --- |
+| 用户端 | `http://localhost:8085` | 机票查询、预订、我的行程、个人中心 |
+| 管理端 | `http://localhost:8085/admin` | 管理员登录后的航班、订单、用户、统计与广播管理 |
+| API 网关 | `http://localhost:8080` | 仅用于转发 `/api/**` 请求，没有首页页面；直接访问根路径出现 404 是正常现象 |
+| Nacos 控制台 | `http://localhost:8848/nacos` | 注册中心与配置中心，默认账号/密码通常为 `nacos/nacos` |
+| MinIO 控制台 | `http://localhost:9001` | 对象存储管理，默认本地凭证通常为 `minioadmin/minioadmin` |
 
 ---
 
