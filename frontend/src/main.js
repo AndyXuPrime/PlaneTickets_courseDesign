@@ -28,14 +28,12 @@ import './assets/main.css';
 
 // --- 图标库 (FontAwesome) ---
 import { library } from '@fortawesome/fontawesome-svg-core';
-import {
-  faPlane,
-  faSearch,
-  faUser,
-  faSignOutAlt,
-  faCrown,
-  faStar
-} from '@fortawesome/free-solid-svg-icons';
+import { faPlane } from '@fortawesome/free-solid-svg-icons/faPlane';
+import { faSearch } from '@fortawesome/free-solid-svg-icons/faSearch';
+import { faUser } from '@fortawesome/free-solid-svg-icons/faUser';
+import { faSignOutAlt } from '@fortawesome/free-solid-svg-icons/faSignOutAlt';
+import { faCrown } from '@fortawesome/free-solid-svg-icons/faCrown';
+import { faStar } from '@fortawesome/free-solid-svg-icons/faStar';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
 /**

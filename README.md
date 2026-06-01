@@ -14,6 +14,27 @@
 
 ---
 
+## 真实访问入口（先看这里）
+
+项目启动完成后，真实页面入口是前端开发服务 `8085`，不是 Gateway 的 `8080`：
+
+- 用户端：`http://localhost:8085`
+- 管理端：`http://localhost:8085/admin`
+
+`http://localhost:8080` 是 API 网关地址，只负责转发 `/api/**` 请求；直接打开 Gateway 根路径出现 404 属于正常现象。
+
+常用本地地址如下：
+
+| 入口 | 地址 | 说明 |
+| --- | --- | --- |
+| 用户端 | `http://localhost:8085` | 机票查询、预订、我的行程、个人中心 |
+| 管理端 | `http://localhost:8085/admin` | 管理员登录后的航班、订单、用户、统计与广播管理 |
+| API 网关 | `http://localhost:8080` | 仅用于转发 `/api/**` 请求，没有首页页面；直接访问根路径出现 404 是正常现象 |
+| Nacos 控制台 | `http://localhost:8848/nacos` | 注册中心与配置中心，默认账号/密码通常为 `nacos/nacos` |
+| MinIO 控制台 | `http://localhost:9001` | 对象存储管理，默认本地凭证通常为 `minioadmin/minioadmin` |
+
+---
+
 ## 项目简介
 
 - **微服务架构实践**：使用 Spring Cloud Gateway + Nacos + OpenFeign 搭建服务注册、配置管理、统一网关鉴权和跨服务调用链路。
@@ -267,7 +288,7 @@ startup.cmd -m standalone
 redis-server.exe
 
 # 启动 MinIO，并按实际配置创建头像/Logo 使用的 bucket
-minio.exe server D:\data --console-address ":9001"
+minio.exe server D:\MinIO\data --console-address ":9001"
 ```
 
 > 各服务本地只保留 `bootstrap.yml` 作为 Nacos 寻址配置。启动前需要在 Nacos 中准备数据库、Redis、MinIO、JWT 等服务配置。
@@ -308,10 +329,12 @@ npm run serve
 前端开发服务端口在 `frontend/vue.config.js` 中配置为：
 
 ```text
-http://localhost:8081
+http://localhost:8085
 ```
 
-API 统一请求 `http://localhost:8080`，由 Gateway 转发到后端服务。
+用户端访问 `http://localhost:8085`，管理端访问 `http://localhost:8085/admin`。
+
+API 统一请求 `http://localhost:8080`，由 Gateway 转发到后端服务。Gateway 根路径 `/` 没有页面路由，直接访问 `http://localhost:8080` 出现 404 属于正常现象。
 
 ---
 
@@ -355,9 +378,11 @@ API 统一请求 `http://localhost:8080`，由 Gateway 转发到后端服务。
 已在当前仓库执行以下检查：
 
 ```bash
-cd backend && mvn -q -DskipTests package
-cd backend/admin-service && mvn -q -DskipTests package
-cd frontend && npm run lint
+cd backend && mvn -q clean install -DskipTests
+cd backend/admin-service && mvn -q clean package -DskipTests
+cd frontend
+npm run lint
+npm run build
 ```
 
 结果：
@@ -365,6 +390,7 @@ cd frontend && npm run lint
 - 后端根工程聚合模块构建通过。
 - `admin-service` 单独构建通过。
 - 前端 ESLint 检查通过。
+- 前端生产构建通过；当前仍存在 Vue CLI 默认资源体积阈值提示，主要来自 Element UI 与管理端图表相关 chunk，不影响本地运行。
 
 ---
 
