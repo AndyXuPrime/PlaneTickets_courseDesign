@@ -314,7 +314,7 @@ http://localhost:8085
 
 用户端访问 `http://localhost:8085`，管理端访问 `http://localhost:8085/admin`。
 
-API 统一请求 `http://localhost:8080`，由 Gateway 转发到后端服务。Gateway 根路径 `/` 没有页面路由，直接访问 `http://localhost:8080` 出现 404 属于正常现象。
+API 统一请求 `http://localhost:8080`，由 Gateway 转发到后端服务。Gateway 根路径 `/` 没有页面路由，直接访问 `http://localhost:8080` 会出现 404 。
 
 ---
 
@@ -324,8 +324,6 @@ API 统一请求 `http://localhost:8080`，由 Gateway 转发到后端服务。G
 
 - 用户端：`http://localhost:8085`
 - 管理端：`http://localhost:8085/admin`
-
-`http://localhost:8080` 是 API 网关地址，只负责转发 `/api/**` 请求；直接打开 Gateway 根路径会出现 404 现象。
 
 常用本地地址如下：
 
@@ -405,5 +403,5 @@ npm run build
 
 ---
 
-**开发者**：AndyXuPrime  
+**开发者**：AndyXuPrime
 **版本**：V 1.0.0 (Microservices Edition)
